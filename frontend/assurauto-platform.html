@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AssurAuto - Gestion Client Vehicule Sinistre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+*{box-sizing:border-box}
+:root{
+  --bg:#f5f7fb;--panel:#fff;--panel2:#f9fafc;--text:#182033;--muted:#64708a;--faint:#8a94a8;
+  --line:#dfe5ef;--line2:#cfd8e8;--brand:#2563eb;--brand2:#0891b2;--ok:#059669;--warn:#d97706;--bad:#dc2626;
+  --radius:8px;--mono:"DM Mono",monospace;--font:Inter,system-ui,-apple-system,Segoe UI,sans-serif;
+}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px}
+button,input,select,textarea{font:inherit}
+.topbar{height:56px;background:#121826;color:#fff;display:flex;align-items:center;gap:16px;padding:0 18px;border-bottom:1px solid #20283a}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700}
+.brand-icon{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:grid;place-items:center}
+.topbar .hint{color:#aab4c7;font-size:12px;margin-left:auto}
+.btn{border:1px solid var(--line2);background:#fff;color:var(--text);border-radius:7px;padding:8px 11px;display:inline-flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;font-weight:600;min-height:36px}
+.btn:hover{border-color:var(--brand);color:var(--brand)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.bad{background:#fff;border-color:#fecaca;color:var(--bad)}
+.btn.small{padding:6px 9px;min-height:30px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.app{display:grid;grid-template-columns:310px minmax(420px,1fr) 420px;gap:14px;padding:14px;height:calc(100vh - 56px)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;min-height:0;display:flex;flex-direction:column}
+.panel-head{padding:13px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:9px;justify-content:space-between;background:var(--panel2)}
+.panel-title{font-weight:700;display:flex;align-items:center;gap:8px}
+.panel-body{padding:14px;overflow:auto;min-height:0}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:#fff;border-radius:7px;padding:0 9px;margin-bottom:12px}
+.search input{border:0;outline:0;padding:9px 0;background:transparent;width:100%}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.stat{border:1px solid var(--line);border-radius:7px;background:#fff;padding:9px}
+.stat b{display:block;font-size:19px}
+.stat span{font-size:11px;color:var(--muted);font-weight:600}
+.tree{display:flex;flex-direction:column;gap:8px}
+.tree-empty{color:var(--muted);font-size:13px;padding:12px;border:1px dashed var(--line2);border-radius:7px}
+.node{border:1px solid var(--line);background:#fff;border-radius:8px;overflow:hidden}
+.node-main{width:100%;border:0;background:transparent;text-align:left;padding:10px 11px;display:flex;gap:9px;align-items:flex-start;cursor:pointer;color:var(--text)}
+.node-main:hover{background:#f8fbff}
+.node-main.active{background:#eff6ff;color:#1d4ed8}
+.node-icon{width:26px;height:26px;border-radius:6px;display:grid;place-items:center;background:#eef2ff;color:var(--brand);flex:0 0 auto}
+.node-label{font-weight:700;line-height:1.25}
+.node-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.children{border-top:1px solid var(--line);padding:7px 7px 8px 18px;background:#fbfcff;display:flex;flex-direction:column;gap:6px}
+.child{border:1px solid transparent;background:transparent;border-radius:7px;padding:8px;text-align:left;cursor:pointer;display:flex;gap:8px;align-items:flex-start;color:var(--text)}
+.child:hover{background:#fff;border-color:var(--line)}
+.child.active{background:#fff;border-color:#bfdbfe;color:#1d4ed8}
+.claim{margin-left:26px}
+.tabs{display:flex;gap:5px;padding:8px;border-bottom:1px solid var(--line);background:var(--panel2)}
+.tab{border:1px solid transparent;background:transparent;color:var(--muted);border-radius:7px;padding:8px 11px;cursor:pointer;font-weight:700}
+.tab.active{background:#fff;border-color:var(--line);color:var(--brand)}
+.section{display:none}
+.section.active{display:block}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field.full{grid-column:1/-1}
+label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:800}
+input,select,textarea{width:100%;border:1px solid var(--line2);border-radius:7px;padding:9px 10px;background:#fff;color:var(--text);outline:0}
+textarea{min-height:90px;resize:vertical}
+input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.form-actions{display:flex;justify-content:space-between;gap:8px;margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.muted{color:var(--muted)}
+.mono{font-family:var(--mono)}
+.badge{border-radius:999px;padding:3px 8px;font-size:11px;font-weight:800;background:#edf2f7;color:#475569;display:inline-flex;align-items:center;gap:4px}
+.badge.ok{background:#dcfce7;color:#047857}.badge.warn{background:#fef3c7;color:#b45309}.badge.info{background:#dbeafe;color:#1d4ed8}.badge.bad{background:#fee2e2;color:#b91c1c}
+.upload-zone{border:1px solid var(--line);background:#fff;border-radius:8px;padding:12px;margin-bottom:14px}
+.upload-head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:9px}
+.upload-title{font-weight:800}
+.form-section{border:1px solid var(--line);border-radius:8px;background:#fff;margin-bottom:14px;overflow:hidden}
+.form-section-head{padding:12px 14px;border-bottom:1px solid var(--line);background:var(--panel2);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.form-section-title{font-weight:800;display:flex;align-items:center;gap:8px}
+.form-section-body{padding:14px}
+.doc-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.doc-btn{position:relative;overflow:hidden;justify-content:flex-start}
+.doc-btn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.doc-list{display:flex;flex-direction:column;gap:8px}
+.doc-row{border:1px solid var(--line);border-radius:7px;padding:9px;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.right-stack{display:flex;flex-direction:column;gap:14px}
+.notice{border:1px solid #bfdbfe;background:#eff6ff;color:#1e3a8a;border-radius:8px;padding:10px;font-size:13px}
+.flash{position:fixed;right:16px;bottom:16px;display:none;padding:11px 14px;border-radius:8px;background:#111827;color:#fff;box-shadow:0 12px 35px rgba(15,23,42,.22);z-index:50;max-width:420px}
+.flash.show{display:flex;align-items:center;gap:8px}.flash.ok{background:#065f46}.flash.err{background:#991b1b}.flash.info{background:#1e3a8a}
+@media(max-width:1180px){.app{grid-template-columns:320px 1fr;height:auto}.right-stack{grid-column:1/-1}.panel{min-height:420px}}
+@media(max-width:780px){.app{grid-template-columns:1fr;padding:10px}.topbar .hint{display:none}.grid,.doc-buttons,.stats{grid-template-columns:1fr}.form-actions{flex-direction:column}.btn{width:100%}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><div class="brand-icon"><i class="fa-solid fa-car-burst"></i></div>AssurAuto</div>
+  <div class="hint">Structure active: Client -> Vehicules -> Sinistres</div>
+  <button class="btn small" id="refreshBtn"><i class="fa-solid fa-rotate"></i> Rafraichir</button>
+</header>
+
+<main class="app">
+  <aside class="panel">
+    <div class="panel-head">
+      <div class="panel-title"><i class="fa-solid fa-sitemap"></i> Dossiers</div>
+      <button class="btn small primary" id="newClientBtn"><i class="fa-solid fa-plus"></i> Client</button>
+    </div>
+    <div class="panel-body">
+      <div class="stats">
+        <div class="stat"><b id="statClients">0</b><span>Clients</span></div>
+        <div class="stat"><b id="statVehicles">0</b><span>Vehicules</span></div>
+        <div class="stat"><b id="statClaims">0</b><span>Sinistres</span></div>
+      </div>
+      <div class="search"><i class="fa-solid fa-magnifying-glass muted"></i><input id="searchInput" placeholder="Rechercher client, CIN, plaque..."></div>
+      <div id="tree" class="tree"></div>
+    </div>
+  </aside>
+
+  <section class="panel">
+    <div class="tabs">
+      <button class="tab active" data-tab="client"><i class="fa-solid fa-user"></i> Client</button>
+      <button class="tab" data-tab="vehicle"><i class="fa-solid fa-car"></i> Vehicule</button>
+      <button class="tab" data-tab="claim"><i class="fa-solid fa-file-medical"></i> Sinistre</button>
+    </div>
+    <div class="panel-body">
+      <section id="tab-client" class="section active">
+        <div class="upload-zone">
+          <div class="upload-head">
+            <div><div class="upload-title">Pieces client</div><div class="muted">Upload OCR avant ou apres sauvegarde</div></div>
+            <label class="badge info"><input type="checkbox" id="autoOcr" checked> OCR auto</label>
+          </div>
+          <div class="doc-buttons">
+            <button class="btn doc-btn"><i class="fa-solid fa-id-card"></i> CIN / Passeport<input type="file" data-doc="cin" accept=".pdf,.jpg,.jpeg,.png,.webp"></button>
+            <button class="btn doc-btn"><i class="fa-solid fa-house"></i> Justificatif domicile<input type="file" data-doc="domicile" accept=".pdf,.jpg,.jpeg,.png,.webp"></button>
+          </div>
+        </div>
+        <form id="clientForm">
+          <div class="form-section">
+            <div class="form-section-head">
+              <div class="form-section-title"><i class="fa-solid fa-id-card"></i> Informations CIN / Passeport</div>
+              <button type="button" class="btn small" id="resetCinBtn"><i class="fa-solid fa-rotate-left"></i> Réinitialiser</button>
+            </div>
+            <div class="form-section-body grid" id="cinFields">
+              <div class="field"><label>Nom *</label><input id="cinNom" required placeholder="-"></div>
+              <div class="field"><label>Prénom *</label><input id="cinPrenom" required placeholder="-"></div>
+              <div class="field"><label>N° CIN / Passeport *</label><input id="cinNumero" class="mono" required placeholder="-"></div>
+              <div class="field"><label>Date de naissance</label><input id="cinNaissance" type="date"></div>
+              <div class="field"><label>Sexe</label><select id="cinSexe"><option value="">-</option><option>Masculin</option><option>Féminin</option></select></div>
+              <div class="field"><label>Date d'expiration</label><input id="cinExpiration" type="date"></div>
+              <div class="field"><label>Adresse</label><input id="cinAdresse" placeholder="-"></div>
+              <div class="field"><label>Ville</label><input id="cinVille" placeholder="-"></div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-head">
+              <div class="form-section-title"><i class="fa-solid fa-house"></i> Justificatif de domicile</div>
+            </div>
+            <div class="form-section-body grid" id="domicileFields">
+              <div class="field full"><label>Adresse confirmée</label><input id="domAdresse" placeholder="-"></div>
+              <div class="field"><label>Type de document</label><select id="domType"><option value="">-</option><option>Facture électricité</option><option>Facture eau</option><option>Quittance de loyer</option><option>Relevé bancaire</option><option>Attestation résidence</option></select></div>
+              <div class="field"><label>Émetteur</label><input id="domEmetteur" placeholder="-"></div>
+              <div class="field"><label>Date du document</label><input id="domDate" type="month"></div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-head">
+              <div class="form-section-title"><i class="fa-solid fa-user-gear"></i> Informations complémentaires</div>
+            </div>
+            <div class="form-section-body grid" id="clientExtraFields">
+              <div class="field"><label>Téléphone</label><input id="clientPhone" placeholder="+212 6XX XXX XXX"></div>
+              <div class="field"><label>Email</label><input id="clientEmail" type="email" placeholder="client@email.ma"></div>
+              <div class="field"><label>Profession</label><input id="clientProfession" placeholder="-"></div>
+              <div class="field"><label>Statut client</label><select id="clientType"><option value="individual">Particulier</option><option value="professional">Professionnel</option><option value="company">Entreprise</option></select></div>
+            </div>
+          </div>
+        </form>
+        <div class="form-actions">
+          <button class="btn bad" id="deleteClientBtn"><i class="fa-solid fa-trash"></i> Supprimer client</button>
+          <div class="toolbar">
+            <button class="btn" id="clearClientBtn"><i class="fa-solid fa-eraser"></i> Nouveau</button>
+            <button class="btn primary" id="saveClientBtn"><i class="fa-solid fa-floppy-disk"></i> Enregistrer client</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-vehicle" class="section">
+        <div class="notice" id="vehicleNotice">Selectionnez ou enregistrez un client avant d'ajouter un vehicule.</div>
+        <div class="upload-zone">
+          <div class="upload-head">
+            <div><div class="upload-title">Documents vehicule</div><div class="muted">Ils seront lies au client actif et au vehicule sauvegarde</div></div>
+            <button class="btn small" id="newVehicleBtn"><i class="fa-solid fa-plus"></i> Nouveau vehicule</button>
+          </div>
+          <div class="doc-buttons">
+            <button class="btn doc-btn"><i class="fa-solid fa-file-lines"></i> Carte grise<input type="file" data-doc="cg" accept=".pdf,.jpg,.jpeg,.png,.webp"></button>
+            <button class="btn doc-btn"><i class="fa-solid fa-id-card"></i> Permis<input type="file" data-doc="permis" accept=".pdf,.jpg,.jpeg,.png,.webp"></button>
+            <button class="btn doc-btn"><i class="fa-solid fa-wrench"></i> Controle technique<input type="file" data-doc="ct" accept=".pdf,.jpg,.jpeg,.png,.webp"></button>
+            <button class="btn doc-btn"><i class="fa-solid fa-shield-halved"></i> Attestation<input type="file" data-doc="att" accept=".pdf,.jpg,.jpeg,.png,.webp"></button>
+          </div>
+        </div>
+        <form id="vehicleForm" class="grid">
+          <div class="field"><label>Client lie</label><input id="vehicleClientLabel" disabled></div>
+          <div class="field"><label>Immatriculation *</label><input id="vehicleReg" class="mono" required></div>
+          <div class="field"><label>Marque</label><input id="vehicleMake"></div>
+          <div class="field"><label>Modele</label><input id="vehicleModel"></div>
+          <div class="field"><label>VIN / Chassis</label><input id="vehicleVin" class="mono"></div>
+          <div class="field"><label>Annee</label><input id="vehicleYear" type="number" min="1900" max="2100"></div>
+          <div class="field"><label>Usage</label><select id="vehicleUsage"><option value="">-</option><option>VP - Tourisme</option><option>VUL</option><option>PL</option><option>Moto</option></select></div>
+          <div class="field"><label>Energie</label><input id="vehicleFuel"></div>
+          <div class="field full"><label>Notes vehicule</label><textarea id="vehicleNotes"></textarea></div>
+        </form>
+        <div class="form-actions">
+          <button class="btn bad" id="deleteVehicleBtn"><i class="fa-solid fa-trash"></i> Supprimer vehicule</button>
+          <div class="toolbar">
+            <button class="btn" id="openClaimBtn"><i class="fa-solid fa-file-circle-plus"></i> Declarer sinistre</button>
+            <button class="btn primary" id="saveVehicleBtn"><i class="fa-solid fa-floppy-disk"></i> Enregistrer vehicule</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-claim" class="section">
+        <div class="notice" id="claimNotice">Selectionnez un vehicule pour declarer un sinistre.</div>
+        <div class="upload-zone">
+          <div class="upload-head">
+            <div><div class="upload-title">Pieces sinistre</div><div class="muted">Constat, photos, PV et devis lies au sinistre actif</div></div>
+            <button class="btn small" id="newClaimBtn"><i class="fa-solid fa-plus"></i> Nouveau sinistre</button>
+          </div>
+          <div class="doc-buttons">
+            <button class="btn doc-btn"><i class="fa-solid fa-pen-to-square"></i> Constat<input type="file" data-doc="constat" accept=".pdf,.jpg,.jpeg,.png,.webp"></button>
+            <button class="btn doc-btn"><i class="fa-solid fa-camera"></i> Photos<input type="file" data-doc="photos" accept=".jpg,.jpeg,.png,.webp"></button>
+            <button class="btn doc-btn"><i class="fa-solid fa-gavel"></i> PV police<input type="file" data-doc="pv" accept=".pdf,.jpg,.jpeg,.png,.webp"></button>
+            <button class="btn doc-btn"><i class="fa-solid fa-receipt"></i> Devis / facture<input type="file" data-doc="garage" accept=".pdf,.jpg,.jpeg,.png,.webp"></button>
+          </div>
+        </div>
+        <form id="claimForm" class="grid">
+          <div class="field"><label>Vehicule lie</label><input id="claimVehicleLabel" disabled></div>
+          <div class="field"><label>Reference</label><input id="claimNumber" class="mono" disabled></div>
+          <div class="field"><label>Date accident</label><input id="claimDate" type="date"></div>
+          <div class="field"><label>Statut</label><select id="claimStatus"><option>DECLARED</option><option>UNDER_REVIEW</option><option>DOCUMENTS_PENDING</option><option>APPROVED</option><option>REJECTED</option><option>CLOSED</option></select></div>
+          <div class="field"><label>Lieu</label><input id="claimLocation"></div>
+          <div class="field"><label>Cout estime MAD</label><input id="claimCost" type="number" step="0.01"></div>
+          <div class="field"><label>Niveau degats</label><input id="claimDamage"></div>
+          <div class="field"><label>Garage</label><input id="claimGarage"></div>
+          <div class="field full"><label>Description</label><textarea id="claimDescription"></textarea></div>
+        </form>
+        <div class="form-actions">
+          <button class="btn bad" id="deleteClaimBtn"><i class="fa-solid fa-trash"></i> Supprimer sinistre</button>
+          <div class="toolbar">
+            <button class="btn" id="claimReviewBtn"><i class="fa-solid fa-magnifying-glass-chart"></i> Envoyer expertise</button>
+            <button class="btn ok" id="closeClaimBtn"><i class="fa-solid fa-circle-check"></i> Cloturer</button>
+            <button class="btn primary" id="saveClaimBtn"><i class="fa-solid fa-floppy-disk"></i> Enregistrer sinistre</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <section class="right-stack">
+    <aside class="panel">
+      <div class="panel-head"><div class="panel-title"><i class="fa-solid fa-diagram-project"></i> Relation active</div></div>
+      <div class="panel-body">
+        <div id="activePath" class="notice">Aucun client selectionne.</div>
+      </div>
+    </aside>
+    <aside class="panel">
+      <div class="panel-head"><div class="panel-title"><i class="fa-solid fa-file"></i> Documents</div></div>
+      <div class="panel-body">
+        <div id="docList" class="doc-list"></div>
+      </div>
+    </aside>
+    <aside class="panel">
+      <div class="panel-head"><div class="panel-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Cache OCR</div><button class="btn small" id="clearOcrBtn">Vider</button></div>
+      <div class="panel-body">
+        <pre id="ocrPreview" class="muted" style="white-space:pre-wrap;margin:0;font-family:var(--mono);font-size:12px"></pre>
+      </div>
+    </aside>
+  </section>
+</main>
+
+<div id="flash" class="flash"><i class="fa-solid fa-circle-info"></i><span id="flashText"></span></div>
+
+<script>
+const API = '/api/v1';
+const DOC_SCOPE = { cin:'client', domicile:'client', cg:'vehicle', permis:'vehicle', ct:'vehicle', att:'vehicle', constat:'claim', photos:'claim', pv:'claim', garage:'claim' };
+const DOC_TYPE = { photos:'accidents', garage:'repair_invoice' };
+const state = {
+  clients: [], vehicles: [], claims: [], documents: [],
+  activeClientId: Number(localStorage.getItem('assurauto_client_id')) || null,
+  activeVehicleId: Number(localStorage.getItem('assurauto_vehicle_id')) || null,
+  activeClaimId: Number(localStorage.getItem('assurauto_claim_id')) || null,
+  pendingDocs: JSON.parse(sessionStorage.getItem('assurauto_pending_docs') || '[]'),
+  ocr: JSON.parse(sessionStorage.getItem('assurauto_ocr_cache') || '{}'),
+  tab: 'client',
+};
+
+function $(id){return document.getElementById(id)}
+function esc(v){return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function showFlash(text, kind='info'){const f=$('flash');$('flashText').textContent=text;f.className='flash show '+kind;clearTimeout(f.t);f.t=setTimeout(()=>f.classList.remove('show'),3200)}
+async function api(path, options={}){
+  const response = await fetch(API + path, { headers: options.body instanceof FormData ? undefined : {'Content-Type':'application/json'}, ...options });
+  if(!response.ok){const error=await response.json().catch(()=>({}));throw new Error(error.detail || 'Erreur API '+response.status)}
+  return response.status === 204 ? null : response.json();
+}
+function setTab(name){
+  state.tab=name;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+  document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active', s.id==='tab-'+name));
+}
+function saveLocal(){
+  if(state.activeClientId) localStorage.setItem('assurauto_client_id', state.activeClientId); else localStorage.removeItem('assurauto_client_id');
+  if(state.activeVehicleId) localStorage.setItem('assurauto_vehicle_id', state.activeVehicleId); else localStorage.removeItem('assurauto_vehicle_id');
+  if(state.activeClaimId) localStorage.setItem('assurauto_claim_id', state.activeClaimId); else localStorage.removeItem('assurauto_claim_id');
+  sessionStorage.setItem('assurauto_pending_docs', JSON.stringify(state.pendingDocs));
+  sessionStorage.setItem('assurauto_ocr_cache', JSON.stringify(state.ocr));
+}
+function activeClient(){return state.clients.find(c=>c.id===state.activeClientId)||null}
+function activeVehicle(){return state.vehicles.find(v=>v.id===state.activeVehicleId)||null}
+function activeClaim(){return state.claims.find(c=>c.id===state.activeClaimId)||null}
+function vehiclesOf(clientId){return state.vehicles.filter(v=>v.client_id===clientId)}
+function claimsOf(vehicleId){return state.claims.filter(c=>c.vehicle_id===vehicleId)}
+
+async function refresh(){
+  try{
+    const [clients, vehicles, claims, documents] = await Promise.all([api('/clients'), api('/vehicles'), api('/claims'), api('/documents')]);
+    Object.assign(state,{clients,vehicles,claims,documents});
+    if(state.activeClientId && !activeClient()) state.activeClientId = clients[0]?.id || null;
+    if(state.activeVehicleId && !activeVehicle()) state.activeVehicleId = vehiclesOf(state.activeClientId)[0]?.id || null;
+    if(state.activeClaimId && !activeClaim()) state.activeClaimId = claimsOf(state.activeVehicleId)[0]?.id || null;
+    saveLocal(); renderAll();
+  }catch(err){showFlash(err.message,'err')}
+}
+
+function renderAll(){renderTree();renderStats();renderForms();renderDocs();renderPath();renderOcr();updateButtons()}
+function renderStats(){
+  $('statClients').textContent=state.clients.length;
+  $('statVehicles').textContent=state.vehicles.length;
+  $('statClaims').textContent=state.claims.length;
+}
+function renderTree(){
+  const q = $('searchInput').value.trim().toLowerCase();
+  const filtered = state.clients.filter(c => {
+    const text = [c.full_name,c.cin_number,c.email,c.phone,...vehiclesOf(c.id).map(v=>v.registration_number)].join(' ').toLowerCase();
+    return !q || text.includes(q);
+  });
+  if(!filtered.length){$('tree').innerHTML='<div class="tree-empty">Aucun dossier dans PostgreSQL.</div>';return}
+  $('tree').innerHTML = filtered.map(client => {
+    const vehicles = vehiclesOf(client.id);
+    return `<div class="node">
+      <button class="node-main ${client.id===state.activeClientId?'active':''}" data-pick-client="${client.id}">
+        <span class="node-icon"><i class="fa-solid fa-user"></i></span>
+        <span><span class="node-label">${esc(client.full_name)}</span><span class="node-sub">${esc(client.cin_number||'Sans CIN')} · ${vehicles.length} vehicule(s)</span></span>
+      </button>
+      <div class="children">
+        ${vehicles.map(v => `<button class="child ${v.id===state.activeVehicleId?'active':''}" data-pick-vehicle="${v.id}">
+          <i class="fa-solid fa-car muted"></i><span><b>${esc(v.registration_number||'Vehicule sans plaque')}</b><br><span class="muted">${esc([v.make,v.model].filter(Boolean).join(' ')||'Modele non renseigne')}</span></span>
+        </button>
+        ${claimsOf(v.id).map(c => `<button class="child claim ${c.id===state.activeClaimId?'active':''}" data-pick-claim="${c.id}">
+          <i class="fa-solid fa-file-medical muted"></i><span><b>${esc(c.claim_number)}</b><br><span class="muted">${esc(c.accident_date||'Date inconnue')} · ${esc(c.status)}</span></span>
+        </button>`).join('')}`).join('') || '<div class="muted" style="padding:4px 8px">Aucun vehicule</div>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderPath(){
+  const c=activeClient(), v=activeVehicle(), s=activeClaim();
+  $('activePath').innerHTML = c ? `
+    <b>${esc(c.full_name)}</b><br>
+    <span class="muted">Client #${c.id}</span>
+    ${v ? `<br><br><b>Vehicule:</b> ${esc(v.registration_number||'#'+v.id)}<br><span class="muted">${esc([v.make,v.model].filter(Boolean).join(' '))}</span>` : '<br><br><span class="muted">Aucun vehicule selectionne.</span>'}
+    ${s ? `<br><br><b>Sinistre:</b> ${esc(s.claim_number)}<br><span class="badge info">${esc(s.status)}</span>` : ''}
+  ` : 'Aucun client selectionne.';
+}
+
+function renderForms(){
+  const c=activeClient(), v=activeVehicle(), s=activeClaim();
+  const nameParts = splitClientName(c?.full_name || '');
+  $('cinNom').value=nameParts.nom;$('cinPrenom').value=nameParts.prenom;$('cinNumero').value=c?.cin_number||'';
+  $('cinNaissance').value=c?.metadata?.birth_date||'';$('cinSexe').value=c?.metadata?.sex||'';$('cinExpiration').value=c?.metadata?.cin_expiration||'';
+  $('cinAdresse').value=c?.metadata?.cin_address||c?.address||'';$('cinVille').value=c?.metadata?.city||'';
+  $('domAdresse').value=c?.metadata?.domicile_address||c?.address||'';$('domType').value=c?.metadata?.domicile_type||'';$('domEmetteur').value=c?.metadata?.domicile_issuer||'';$('domDate').value=c?.metadata?.domicile_date||'';
+  $('clientPhone').value=c?.phone||'';$('clientEmail').value=c?.email||'';$('clientProfession').value=c?.metadata?.profession||'';$('clientType').value=c?.client_type||'individual';
+  $('vehicleClientLabel').value=c ? `${c.full_name} (#${c.id})` : '';
+  $('vehicleReg').value=v?.registration_number||'';$('vehicleMake').value=v?.make||'';$('vehicleModel').value=v?.model||'';$('vehicleVin').value=v?.vin||'';
+  $('vehicleYear').value=v?.year||'';$('vehicleUsage').value=v?.usage||'';$('vehicleFuel').value=v?.metadata?.fuel_type||'';$('vehicleNotes').value=v?.metadata?.notes||'';
+  $('claimVehicleLabel').value=v ? `${v.registration_number||'Vehicule #'+v.id} - ${[v.make,v.model].filter(Boolean).join(' ')}` : '';
+  $('claimNumber').value=s?.claim_number||nextClaimNumber();$('claimDate').value=s?.accident_date||'';$('claimStatus').value=s?.status||'DECLARED';
+  $('claimLocation').value=s?.location||'';$('claimCost').value=s?.estimated_cost||'';$('claimDamage').value=s?.damage_level||'';
+  $('claimGarage').value=s?.metadata?.garage_name||'';$('claimDescription').value=s?.description||'';
+  $('vehicleNotice').textContent=c ? `Vehicule rattache au client: ${c.full_name}` : "Selectionnez ou enregistrez un client avant d'ajouter un vehicule.";
+  $('claimNotice').textContent=v ? `Sinistre rattache au vehicule: ${v.registration_number||'#'+v.id}` : 'Selectionnez un vehicule pour declarer un sinistre.';
+}
+function renderDocs(){
+  const docs = state.documents.filter(d =>
+    (state.activeClaimId && d.sinistre_id===state.activeClaimId) ||
+    (!state.activeClaimId && state.activeVehicleId && d.vehicle_id===state.activeVehicleId) ||
+    (!state.activeClaimId && !state.activeVehicleId && state.activeClientId && d.client_id===state.activeClientId)
+  );
+  $('docList').innerHTML = docs.length ? docs.map(d=>`<div class="doc-row"><span><b>${esc(d.original_filename)}</b><br><span class="muted">${esc(d.document_type)} · #${d.id}</span></span><span class="badge ${d.processing_status==='COMPLETED'?'ok':d.processing_status==='FAILED'?'bad':'warn'}">${esc(d.processing_status)}</span></div>`).join('') : '<div class="tree-empty">Aucun document pour la selection active.</div>';
+}
+function renderOcr(){
+  $('ocrPreview').textContent = Object.keys(state.ocr).length ? JSON.stringify(state.ocr,null,2) : 'Aucun resultat OCR en cache.';
+}
+function updateButtons(){
+  const hasClient=!!activeClient(), hasVehicle=!!activeVehicle(), hasClaim=!!activeClaim();
+  $('deleteClientBtn').disabled=!hasClient;$('saveVehicleBtn').disabled=!hasClient;$('deleteVehicleBtn').disabled=!hasVehicle;$('openClaimBtn').disabled=!hasVehicle;
+  $('saveClaimBtn').disabled=!hasClient||!hasVehicle;$('deleteClaimBtn').disabled=!hasClaim;$('claimReviewBtn').disabled=!hasClaim;$('closeClaimBtn').disabled=!hasClaim;
+}
+
+function pickClient(id){state.activeClientId=id;state.activeVehicleId=vehiclesOf(id)[0]?.id||null;state.activeClaimId=state.activeVehicleId?claimsOf(state.activeVehicleId)[0]?.id||null:null;saveLocal();setTab('client');renderAll()}
+function pickVehicle(id){const v=state.vehicles.find(x=>x.id===id);if(!v)return;state.activeClientId=v.client_id;state.activeVehicleId=id;state.activeClaimId=claimsOf(id)[0]?.id||null;saveLocal();setTab('vehicle');renderAll()}
+function pickClaim(id){const s=state.claims.find(x=>x.id===id);if(!s)return;state.activeClientId=s.client_id;state.activeVehicleId=s.vehicle_id;state.activeClaimId=id;saveLocal();setTab('claim');renderAll()}
+function clearClient(){state.activeClientId=null;state.activeVehicleId=null;state.activeClaimId=null;saveLocal();renderForms();updateButtons();setTab('client')}
+function clearVehicle(){state.activeVehicleId=null;state.activeClaimId=null;saveLocal();renderForms();updateButtons();setTab('vehicle')}
+function clearClaim(){state.activeClaimId=null;saveLocal();renderForms();updateButtons();setTab('claim')}
+function nextClaimNumber(){return 'SIN-'+new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14)}
+function splitClientName(fullName){
+  const parts=String(fullName||'').trim().split(/\s+/).filter(Boolean);
+  return {nom:parts[0]||'', prenom:parts.slice(1).join(' ')};
+}
+function fullClientName(){return [$('cinNom').value.trim(), $('cinPrenom').value.trim()].filter(Boolean).join(' ')}
+function resetFields(containerId){document.querySelectorAll('#'+containerId+' input, #'+containerId+' select, #'+containerId+' textarea').forEach(el=>{el.value=''})}
+function validatedClientData(){
+  return {
+    scope:'client',
+    cin:{nom:$('cinNom').value.trim(),prenom:$('cinPrenom').value.trim(),cin_number:$('cinNumero').value.trim(),birth_date:$('cinNaissance').value||null,sex:$('cinSexe').value||null,expiration_date:$('cinExpiration').value||null,address:$('cinAdresse').value.trim(),city:$('cinVille').value.trim()},
+    domicile:{address:$('domAdresse').value.trim(),document_type:$('domType').value||null,issuer:$('domEmetteur').value.trim(),document_date:$('domDate').value||null},
+    extra:{phone:$('clientPhone').value.trim(),email:$('clientEmail').value.trim(),profession:$('clientProfession').value.trim(),client_type:$('clientType').value},
+  };
+}
+function validatedVehicleData(){
+  return {scope:'vehicle',registration_number:$('vehicleReg').value.trim(),vin:$('vehicleVin').value.trim(),make:$('vehicleMake').value.trim(),model:$('vehicleModel').value.trim(),year:$('vehicleYear').value||null,usage:$('vehicleUsage').value||null,fuel_type:$('vehicleFuel').value.trim(),notes:$('vehicleNotes').value.trim()};
+}
+function validatedClaimData(){
+  return {scope:'claim',claim_number:$('claimNumber').value,accident_date:$('claimDate').value||null,status:$('claimStatus').value,location:$('claimLocation').value.trim(),estimated_cost:$('claimCost').value||null,damage_level:$('claimDamage').value.trim(),garage_name:$('claimGarage').value.trim(),description:$('claimDescription').value.trim()};
+}
+
+async function saveClient(){
+  const payload = {
+    full_name:fullClientName()||'Nouveau client',
+    cin_number:$('cinNumero').value.trim()||null,
+    phone:$('clientPhone').value.trim()||null,
+    email:$('clientEmail').value.trim()||null,
+    address:$('domAdresse').value.trim()||$('cinAdresse').value.trim()||null,
+    client_type:$('clientType').value,
+    metadata:{
+      birth_date:$('cinNaissance').value||null,
+      sex:$('cinSexe').value||null,
+      cin_expiration:$('cinExpiration').value||null,
+      cin_address:$('cinAdresse').value.trim()||null,
+      city:$('cinVille').value.trim()||null,
+      domicile_address:$('domAdresse').value.trim()||null,
+      domicile_type:$('domType').value||null,
+      domicile_issuer:$('domEmetteur').value.trim()||null,
+      domicile_date:$('domDate').value||null,
+      profession:$('clientProfession').value.trim()||null,
+      ocr_cache:state.ocr.client||state.ocr
+    }
+  };
+  const saved = await api(state.activeClientId?'/clients/'+state.activeClientId:'/clients',{method:state.activeClientId?'PATCH':'POST',body:JSON.stringify(payload)});
+  state.activeClientId=saved.id;await assignPending('client',{client_id:saved.id,validated_data:validatedClientData()});saveLocal();await refresh();setTab('vehicle');showFlash('Client enregistre. Vous pouvez ajouter ses vehicules.','ok');
+}
+async function saveVehicle(){
+  if(!state.activeClientId) throw new Error("Enregistrez d'abord le client.");
+  const payload = {client_id:state.activeClientId,registration_number:$('vehicleReg').value.trim()||null,vin:$('vehicleVin').value.trim()||null,make:$('vehicleMake').value.trim()||null,model:$('vehicleModel').value.trim()||null,year:$('vehicleYear').value?Number($('vehicleYear').value):null,usage:$('vehicleUsage').value||null,metadata:{fuel_type:$('vehicleFuel').value.trim()||null,notes:$('vehicleNotes').value.trim()||null,ocr_cache:state.ocr.vehicle||state.ocr}};
+  const saved = await api(state.activeVehicleId?'/vehicles/'+state.activeVehicleId:'/vehicles',{method:state.activeVehicleId?'PATCH':'POST',body:JSON.stringify(payload)});
+  state.activeVehicleId=saved.id;await assignPending('vehicle',{client_id:state.activeClientId,vehicle_id:saved.id,validated_data:validatedVehicleData()});saveLocal();await refresh();setTab('claim');showFlash('Vehicule enregistre. Vous pouvez declarer un sinistre.','ok');
+}
+async function saveClaim(){
+  if(!state.activeClientId||!state.activeVehicleId) throw new Error('Selectionnez un client et un vehicule.');
+  const existingId = state.activeClaimId;
+  const oldStatus = activeClaim()?.status;
+  const targetStatus = $('claimStatus').value;
+  const payload = {client_id:state.activeClientId,vehicle_id:state.activeVehicleId,claim_number:$('claimNumber').value||nextClaimNumber(),accident_date:$('claimDate').value||null,location:$('claimLocation').value.trim()||null,description:$('claimDescription').value.trim()||null,damage_level:$('claimDamage').value.trim()||null,estimated_cost:$('claimCost').value||null,metadata:{garage_name:$('claimGarage').value.trim()||null,ocr_cache:state.ocr.claim||state.ocr},status:targetStatus};
+  if(existingId) delete payload.status;
+  const saved = await api(existingId?'/claims/'+existingId:'/claims',{method:existingId?'PATCH':'POST',body:JSON.stringify(payload)});
+  if(existingId && oldStatus && targetStatus !== oldStatus) await api('/claims/'+saved.id+'/status',{method:'POST',body:JSON.stringify({to_status:targetStatus,reason:'Modification depuis formulaire'})});
+  state.activeClaimId=saved.id;await assignPending('claim',{client_id:state.activeClientId,vehicle_id:state.activeVehicleId,sinistre_id:saved.id,validated_data:validatedClaimData()});saveLocal();await refresh();setTab('claim');showFlash('Sinistre enregistre et lie au vehicule.','ok');
+}
+async function removeActive(kind){
+  if(kind==='client'&&state.activeClientId){await api('/clients/'+state.activeClientId,{method:'DELETE'});clearClient()}
+  if(kind==='vehicle'&&state.activeVehicleId){await api('/vehicles/'+state.activeVehicleId,{method:'DELETE'});clearVehicle()}
+  if(kind==='claim'&&state.activeClaimId){await api('/claims/'+state.activeClaimId,{method:'DELETE'});clearClaim()}
+  await refresh();showFlash('Suppression effectuee.','ok');
+}
+async function updateClaimStatus(status){
+  if(!state.activeClaimId) return;
+  await api('/claims/'+state.activeClaimId+'/status',{method:'POST',body:JSON.stringify({to_status:status,reason:'Action depuis interface'})});
+  await refresh();showFlash(status==='CLOSED'?'Sinistre cloture.':'Sinistre envoye en expertise.','ok');
+}
+
+async function assignPending(scope, refs){
+  const docs = state.pendingDocs.filter(d=>d.scope===scope);
+  await Promise.all(docs.map(d=>api('/documents/'+d.id+'/assign-refs',{method:'POST',body:JSON.stringify(refs)}).catch(()=>null)));
+  state.pendingDocs = state.pendingDocs.filter(d=>d.scope!==scope);saveLocal();
+}
+async function uploadDocument(input){
+  const file=input.files?.[0]; if(!file) return;
+  const doc=input.dataset.doc, scope=DOC_SCOPE[doc]||'client';
+  if(scope==='claim') await ensureClaimForDocumentUpload();
+  const form=new FormData(); form.append('file',file); form.append('document_type',DOC_TYPE[doc]||doc);
+  if(state.activeClientId) form.append('client_id',state.activeClientId);
+  if(scope==='vehicle'&&state.activeVehicleId) form.append('vehicle_id',state.activeVehicleId);
+  if(scope==='claim'&&state.activeClaimId) form.append('sinistre_id',state.activeClaimId);
+  try{
+    showFlash('Upload en cours: '+file.name,'info');
+    const created=await api('/documents/upload',{method:'POST',body:form});
+    state.pendingDocs=state.pendingDocs.filter(d=>d.id!==created.id).concat({id:created.id,scope,document_type:created.document_type});
+    saveLocal();
+    if($('autoOcr').checked) pollAi(created.id, scope, doc);
+    await refresh();showFlash('Document uploade. Traitement OCR lance.','ok');
+  }catch(err){showFlash(err.message,'err')} finally{input.value=''}
+}
+async function ensureClaimForDocumentUpload(){
+  if(state.activeClaimId) return;
+  if(!state.activeClientId || !state.activeVehicleId) throw new Error("Selectionnez un client et un vehicule avant d'uploader une piece sinistre.");
+  const payload = {
+    client_id: state.activeClientId,
+    vehicle_id: state.activeVehicleId,
+    claim_number: nextClaimNumber(),
+    status: 'DECLARED',
+    metadata: { created_from_document_upload: true }
+  };
+  const created = await api('/claims', {method:'POST', body:JSON.stringify(payload)});
+  state.activeClaimId = created.id;
+  saveLocal();
+  await refresh();
+  setTab('claim');
+}
+async function pollAi(id, scope, docKey){
+  for(let i=0;i<18;i++){
+    await new Promise(r=>setTimeout(r,2500));
+    const doc=await api('/documents/'+id).catch(()=>null);
+    if(!doc || doc.processing_status==='PENDING' || doc.processing_status==='PROCESSING') continue;
+    if(doc.processing_status==='COMPLETED' && doc.ai_result){await refresh();setTab(scope==='vehicle'?'vehicle':scope==='claim'?'claim':'client');applyAi(doc.ai_result, scope, docKey);showFlash('OCR applique au formulaire.','ok')}
+    if(doc.processing_status==='FAILED') showFlash('OCR echoue: '+(doc.processing_error||'erreur inconnue'),'err');
+    break;
+  }
+}
+function rawValue(raw,...keys){
+  for(const key of keys){
+    if(!key)continue;
+    if(raw && raw[key] !== undefined && raw[key] !== null && String(raw[key]).trim() !== '') return raw[key];
+    const norm=key.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'');
+    for(const rk of Object.keys(raw||{})){
+      const rawKey = rk.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'');
+      if((rawKey.includes(norm) || norm.includes(rawKey)) && raw[rk]) return raw[rk];
+    }
+  }
+  return null;
+}
+function isoDate(value){
+  if(!value) return '';
+  const text=String(value).trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(text)) return text.slice(0,10);
+  const m=text.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
+  return m ? `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}` : '';
+}
+function splitAiName(name){
+  const parts=String(name||'').trim().split(/\s+/).filter(Boolean);
+  return {nom:parts[0]||'', prenom:parts.slice(1).join(' ')};
+}
+function applyAi(ai, scope, docKey){
+  const raw=ai.raw_fields||ai||{}; state.ocr[scope]=Object.assign(state.ocr[scope]||{}, {[docKey]: ai}); saveLocal();
+  if(scope==='client'){
+    const name=ai.name||rawValue(raw,'full_name','name','nom complet');
+    const nom=rawValue(raw,'nom','last_name','surname');
+    const prenom=rawValue(raw,'prenom','prénom','first_name','given_name');
+    if(nom)$('cinNom').value=nom; else if(name){const parts=splitAiName(name);$('cinNom').value=parts.nom;$('cinPrenom').value=parts.prenom}
+    if(prenom)$('cinPrenom').value=prenom;
+    const cin=ai.cin_number||rawValue(raw,'cin_number','n cin','n° cin','numero cin','numero','cin'); if(cin)$('cinNumero').value=cin;
+    const birth=isoDate(rawValue(raw,'date naissance','date de naissance','birth_date')); if(birth)$('cinNaissance').value=birth;
+    const expiry=isoDate(rawValue(raw,'date expiration','date d expiration','valid_until','expiration')); if(expiry)$('cinExpiration').value=expiry;
+    const sex=rawValue(raw,'sexe','sex','gender'); if(sex)$('cinSexe').value=String(sex).toLowerCase().startsWith('f')?'Féminin':'Masculin';
+    const address=rawValue(raw,'adresse','address'); if(address){$('cinAdresse').value=String(address).replace(/\s+/g,' '); if(!$('domAdresse').value)$('domAdresse').value=String(address).replace(/\s+/g,' ')}
+    const city=rawValue(raw,'ville','city'); if(city)$('cinVille').value=city;
+    if(docKey==='domicile'){
+      const domAddress=rawValue(raw,'adresse confirmee','adresse confirmée','adresse','address'); if(domAddress)$('domAdresse').value=String(domAddress).replace(/\s+/g,' ');
+      const domType=rawValue(raw,'type document','document_type','type'); if(domType)$('domType').value=[...$('domType').options].find(o=>o.text.toLowerCase()===String(domType).toLowerCase())?.value || $('domType').value;
+      const issuer=rawValue(raw,'emetteur','émetteur','issuer','provider'); if(issuer)$('domEmetteur').value=issuer;
+      const docDate=isoDate(rawValue(raw,'date document','document_date','date')); if(docDate)$('domDate').value=docDate.slice(0,7);
+    }
+  }
+  if(scope==='vehicle'){
+    const reg=ai.vehicle||rawValue(raw,'immatriculation','registration_number','numero immatriculation'); if(reg)$('vehicleReg').value=reg;
+    const make=rawValue(raw,'marque','make','brand'); if(make)$('vehicleMake').value=make;
+    const model=rawValue(raw,'modele','model'); if(model)$('vehicleModel').value=model;
+    const vin=rawValue(raw,'chassis','vin'); if(vin)$('vehicleVin').value=vin;
+    const fuel=rawValue(raw,'carburant','energie','fuel'); if(fuel)$('vehicleFuel').value=fuel;
+  }
+  if(scope==='claim'){
+    const date=rawValue(raw,'date accident','date_accident','date'); if(date && /^\d{4}-\d{2}-\d{2}/.test(String(date)))$('claimDate').value=String(date).slice(0,10);
+    const loc=rawValue(raw,'lieu','location'); if(loc)$('claimLocation').value=loc;
+    const desc=ai.accident_summary||rawValue(raw,'description','accident_summary'); if(desc)$('claimDescription').value=desc;
+    const cost=rawValue(raw,'total_cost','cout','total'); if(cost)$('claimCost').value=String(cost).replace(/[^\d.]/g,'');
+  }
+  renderOcr();
+}
+
+document.addEventListener('click', async e=>{
+  const client=e.target.closest('[data-pick-client]'); if(client) return pickClient(Number(client.dataset.pickClient));
+  const vehicle=e.target.closest('[data-pick-vehicle]'); if(vehicle) return pickVehicle(Number(vehicle.dataset.pickVehicle));
+  const claim=e.target.closest('[data-pick-claim]'); if(claim) return pickClaim(Number(claim.dataset.pickClaim));
+});
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
+document.querySelectorAll('input[type=file][data-doc]').forEach(i=>i.addEventListener('change',()=>uploadDocument(i)));
+$('refreshBtn').onclick=refresh;$('newClientBtn').onclick=clearClient;$('clearClientBtn').onclick=clearClient;$('newVehicleBtn').onclick=clearVehicle;$('newClaimBtn').onclick=clearClaim;
+$('resetCinBtn').onclick=()=>resetFields('cinFields');
+$('saveClientBtn').onclick=()=>saveClient().catch(e=>showFlash(e.message,'err'));$('saveVehicleBtn').onclick=()=>saveVehicle().catch(e=>showFlash(e.message,'err'));$('saveClaimBtn').onclick=()=>saveClaim().catch(e=>showFlash(e.message,'err'));
+$('deleteClientBtn').onclick=()=>confirm('Supprimer ce client et ses donnees liees ?')&&removeActive('client').catch(e=>showFlash(e.message,'err'));
+$('deleteVehicleBtn').onclick=()=>confirm('Supprimer ce vehicule ?')&&removeActive('vehicle').catch(e=>showFlash(e.message,'err'));
+$('deleteClaimBtn').onclick=()=>confirm('Supprimer ce sinistre ?')&&removeActive('claim').catch(e=>showFlash(e.message,'err'));
+$('openClaimBtn').onclick=()=>{clearClaim();setTab('claim')};$('claimReviewBtn').onclick=()=>updateClaimStatus('UNDER_REVIEW').catch(e=>showFlash(e.message,'err'));$('closeClaimBtn').onclick=()=>updateClaimStatus('CLOSED').catch(e=>showFlash(e.message,'err'));
+$('clearOcrBtn').onclick=()=>{state.ocr={};saveLocal();renderOcr();showFlash('Cache OCR vide.','ok')};$('searchInput').oninput=renderTree;
+refresh();
+</script>
+</body>
+</html>

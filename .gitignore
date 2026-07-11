@@ -1,0 +1,34 @@
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# FastAPI
+.env
+
+# Node
+node_modules/
+.next/
+out/
+
+# Logs
+*.log
+
+# VSCode
+.vscode/
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Python cache
+.pytest_cache/
+.mypy_cache/
+
+# Database
+*.db
+*.sqlite3
+
+# Uploads (si générés)
+uploads/
