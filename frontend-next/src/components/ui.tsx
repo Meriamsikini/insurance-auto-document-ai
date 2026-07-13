@@ -18,11 +18,11 @@ type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "icon";
 
 const buttonVariants: Record<ButtonVariant, string> = {
-  primary: "border border-transparent bg-brand-600 text-white shadow-card hover:bg-brand-700",
-  secondary: "border border-line bg-white text-slate-700 shadow-card hover:border-brand-300 hover:text-brand-700",
-  outline: "border border-line bg-transparent text-slate-600 hover:border-brand-300 hover:text-brand-700",
-  ghost: "border border-transparent bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-800",
-  danger: "border border-rose-200 bg-white text-rose-600 hover:border-rose-400 hover:bg-rose-50",
+  primary: "border border-transparent bg-brand-500 text-white shadow-card hover:bg-brand-600",
+  secondary: "border border-line bg-surface2 text-ink shadow-card hover:border-brand-400 hover:bg-surface3",
+  outline: "border border-line bg-transparent text-ink2 hover:border-brand-400 hover:text-ink",
+  ghost: "border border-transparent bg-transparent text-ink2 hover:bg-surface2 hover:text-ink",
+  danger: "border border-rose-500/25 bg-rose-500/10 text-rose-400 hover:border-rose-500/40 hover:bg-rose-500/20",
 };
 
 const buttonSizes: Record<ButtonSize, string> = {
@@ -55,16 +55,16 @@ export function IconButton({ className, ...props }: ButtonHTMLAttributes<HTMLBut
 /* ----------------------------------- Card ----------------------------------- */
 
 export const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("rounded-2xl border border-line bg-white shadow-soft", className)} {...props} />
+  <div ref={ref} className={cn("rounded-2xl border border-line bg-surface shadow-soft", className)} {...props} />
 ));
 Card.displayName = "Card";
 
 export function Panel({ children, className }: PropsWithChildren<{ className?: string }>) {
-  return <section className={cn("flex min-h-0 flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-soft", className)}>{children}</section>;
+  return <section className={cn("flex min-h-0 flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-soft", className)}>{children}</section>;
 }
 
 export function PanelHead({ children, className }: PropsWithChildren<{ className?: string }>) {
-  return <div className={cn("flex items-center justify-between gap-3 border-b border-line bg-slate-50/70 px-4 py-3.5", className)}>{children}</div>;
+  return <div className={cn("flex items-center justify-between gap-3 border-b border-line bg-surface2/70 px-4 py-3.5", className)}>{children}</div>;
 }
 
 export function PanelBody({ children, className }: PropsWithChildren<{ className?: string }>) {
@@ -76,9 +76,9 @@ export function PanelBody({ children, className }: PropsWithChildren<{ className
 export function Field({ label, children, full, hint }: PropsWithChildren<{ label: string; full?: boolean; hint?: string }>) {
   return (
     <label className={cn("flex flex-col gap-1.5", full && "md:col-span-2")}>
-      <span className="text-[11px] font-extrabold uppercase tracking-wide text-slate-500">{label}</span>
+      <span className="text-[11px] font-bold uppercase tracking-wide text-ink3">{label}</span>
       {children}
-      {hint && <span className="text-xs text-slate-400">{hint}</span>}
+      {hint && <span className="text-xs text-ink3">{hint}</span>}
     </label>
   );
 }
@@ -86,7 +86,7 @@ export function Field({ label, children, full, hint }: PropsWithChildren<{ label
 /* ------------------------------- Form controls ------------------------------ */
 
 const controlBase =
-  "w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink outline-none transition placeholder:text-slate-400 focus:border-brand-400 focus:ring-4 focus:ring-brand-100 disabled:bg-slate-50 disabled:text-slate-400";
+  "w-full rounded-lg border border-line bg-surface2 px-3 py-2 text-sm text-ink outline-none transition placeholder:text-ink3 focus:border-brand-400 focus:ring-4 focus:ring-brand-500/15 disabled:bg-surface disabled:text-ink3";
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(({ className, ...props }, ref) => (
   <input ref={ref} className={cn(controlBase, className)} {...props} />
@@ -107,11 +107,11 @@ Textarea.displayName = "Textarea";
 
 export function Badge({ children, tone = "slate" }: PropsWithChildren<{ tone?: "slate" | "blue" | "green" | "amber" | "red" }>) {
   const tones: Record<string, string> = {
-    slate: "bg-slate-100 text-slate-600",
-    blue: "bg-brand-100 text-brand-700",
-    green: "bg-teal-100 text-teal-700",
-    amber: "bg-amber-100 text-amber-700",
-    red: "bg-rose-100 text-rose-700",
+    slate: "bg-surface3 text-ink2 border border-line",
+    blue: "bg-brand-500/12 text-brand-300 border border-brand-500/25",
+    green: "bg-emerald-500/12 text-emerald-400 border border-emerald-500/25",
+    amber: "bg-amber-500/12 text-amber-400 border border-amber-500/25",
+    red: "bg-rose-500/12 text-rose-400 border border-rose-500/25",
   };
   return <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold", tones[tone])}>{children}</span>;
 }
@@ -120,9 +120,16 @@ export function Badge({ children, tone = "slate" }: PropsWithChildren<{ tone?: "
 
 const statTones: Record<string, string> = {
   brand: "from-brand-500 to-brand-600",
-  teal: "from-teal-500 to-teal-600",
+  teal: "from-sky-400 to-sky-500",
   amber: "from-amber-500 to-amber-600",
-  slate: "from-slate-500 to-slate-600",
+  slate: "from-surface3 to-surface3",
+};
+
+const statNumberTones: Record<string, string> = {
+  brand: "text-brand-300",
+  teal: "text-sky-300",
+  amber: "text-amber-300",
+  slate: "text-ink",
 };
 
 export function StatCard({
@@ -142,8 +149,8 @@ export function StatCard({
         <Icon size={19} />
       </span>
       <div className="min-w-0">
-        <div className="text-2xl font-extrabold text-ink">{value}</div>
-        <div className="truncate text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</div>
+        <div className={cn("text-2xl font-extrabold", statNumberTones[tone])}>{value}</div>
+        <div className="truncate text-xs font-semibold uppercase tracking-wide text-ink3">{label}</div>
       </div>
     </Card>
   );
@@ -161,7 +168,7 @@ export function SegmentedTabs<T extends string>({
   onChange: (key: T) => void;
 }) {
   return (
-    <div className="flex gap-1 rounded-xl bg-slate-100 p-1">
+    <div className="flex gap-1 rounded-xl bg-surface2 p-1">
       {items.map((item) => {
         const Icon = item.icon;
         const active = item.key === value;
@@ -172,7 +179,7 @@ export function SegmentedTabs<T extends string>({
             onClick={() => onChange(item.key)}
             className={cn(
               "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-bold transition",
-              active ? "bg-white text-brand-700 shadow-card" : "text-slate-500 hover:text-slate-700",
+              active ? "bg-surface text-brand-300 shadow-card" : "text-ink2 hover:text-ink",
             )}
           >
             {Icon && <Icon size={15} />}
@@ -196,12 +203,24 @@ export function EmptyState({
   description?: string;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-line bg-slate-50/60 p-8 text-center">
-      <span className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-slate-400">
+    <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-line bg-surface2/40 p-8 text-center">
+      <span className="grid h-10 w-10 place-items-center rounded-full bg-surface3 text-ink3">
         <Icon size={18} />
       </span>
-      <p className="text-sm font-semibold text-slate-600">{title}</p>
-      {description && <p className="text-xs text-slate-400">{description}</p>}
+      <p className="text-sm font-semibold text-ink2">{title}</p>
+      {description && <p className="text-xs text-ink3">{description}</p>}
+    </div>
+  );
+}
+
+/* --------------------------------- ProgressBar -------------------------------- */
+
+export function ProgressBar({ percent, tone = "brand" }: { percent: number; tone?: "brand" | "teal" | "amber" }) {
+  const clamped = Math.max(0, Math.min(100, percent));
+  const bar = clamped === 100 ? "bg-emerald-500" : tone === "amber" ? "bg-amber-500" : tone === "teal" ? "bg-sky-400" : "bg-brand-500";
+  return (
+    <div className="h-2 w-full overflow-hidden rounded-full bg-surface2">
+      <div className={cn("h-full rounded-full transition-all", bar)} style={{ width: `${clamped}%` }} />
     </div>
   );
 }
@@ -209,5 +228,5 @@ export function EmptyState({
 /* ----------------------------------- Spinner ---------------------------------- */
 
 export function Spinner({ className }: { className?: string }) {
-  return <span className={cn("inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-brand-600", className)} />;
+  return <span className={cn("inline-block h-4 w-4 animate-spin rounded-full border-2 border-line border-t-brand-500", className)} />;
 }

@@ -87,7 +87,7 @@ export function NotificationsBell() {
     <div className="relative" ref={containerRef}>
       <button
         onClick={() => setOpen((value) => !value)}
-        className="relative grid h-9 w-9 place-items-center rounded-lg border border-line bg-white text-slate-500 shadow-card transition hover:border-brand-300 hover:text-brand-700"
+        className="relative grid h-9 w-9 place-items-center rounded-lg border border-line bg-surface2 text-ink2 shadow-card transition hover:border-brand-400 hover:text-brand-300"
       >
         <Bell size={17} />
         {unread > 0 && (
@@ -98,45 +98,45 @@ export function NotificationsBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-80 animate-slide-down overflow-hidden rounded-2xl border border-line bg-white shadow-popover">
+        <div className="absolute right-0 z-50 mt-2 w-80 animate-slide-down overflow-hidden rounded-2xl border border-line bg-surface shadow-popover">
           <div className="flex items-center justify-between border-b border-line px-4 py-3">
             <span className="text-sm font-bold text-ink">Notifications</span>
-            {unread > 0 && <span className="text-xs font-semibold text-brand-600">{unread} non lues</span>}
+            {unread > 0 && <span className="text-xs font-semibold text-brand-300">{unread} non lues</span>}
           </div>
           <div className="max-h-96 overflow-y-auto">
             {isLoading && (
-              <div className="flex items-center justify-center gap-2 p-6 text-sm text-slate-400">
+              <div className="flex items-center justify-center gap-2 p-6 text-sm text-ink3">
                 <Loader2 size={14} className="animate-spin" /> Chargement...
               </div>
             )}
             {!isLoading && notifications.length === 0 && (
-              <div className="p-6 text-center text-sm text-slate-400">Aucune notification pour le moment.</div>
+              <div className="p-6 text-center text-sm text-ink3">Aucune notification pour le moment.</div>
             )}
             {notifications.map((notification) => (
               <div
                 key={notification.id}
                 className={cn(
                   "flex items-start gap-2 border-b border-line/70 px-4 py-3 text-sm last:border-0",
-                  !notification.is_read && "bg-brand-50/50",
+                  !notification.is_read && "bg-brand-500/5",
                 )}
               >
-                <span className={cn("mt-1 h-2 w-2 shrink-0 rounded-full", notification.is_read ? "bg-slate-200" : "bg-brand-500")} />
+                <span className={cn("mt-1 h-2 w-2 shrink-0 rounded-full", notification.is_read ? "bg-surface3" : "bg-brand-400")} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold text-ink">{notification.title}</p>
-                  {notification.message && <p className="mt-0.5 line-clamp-2 text-xs text-slate-500">{notification.message}</p>}
-                  <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">{timeAgo(notification.created_at)}</p>
+                  {notification.message && <p className="mt-0.5 line-clamp-2 text-xs text-ink3">{notification.message}</p>}
+                  <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-ink3">{timeAgo(notification.created_at)}</p>
                 </div>
                 <div className="flex shrink-0 flex-col gap-1">
                   {!notification.is_read && (
                     <button
                       onClick={() => markRead(notification.id)}
-                      className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-brand-600"
+                      className="rounded-md p-1 text-ink3 hover:bg-surface3 hover:text-brand-300"
                       title="Marquer comme lu"
                     >
                       <Check size={14} />
                     </button>
                   )}
-                  <button onClick={() => remove(notification.id)} className="rounded-md p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600" title="Supprimer">
+                  <button onClick={() => remove(notification.id)} className="rounded-md p-1 text-ink3 hover:bg-rose-500/10 hover:text-rose-400" title="Supprimer">
                     <Trash2 size={14} />
                   </button>
                 </div>

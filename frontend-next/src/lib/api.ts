@@ -11,6 +11,8 @@ export type Client = {
   address?: string | null;
   client_type?: string | null;
   metadata?: JsonRecord | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type Vehicle = {
@@ -23,6 +25,8 @@ export type Vehicle = {
   year?: number | null;
   usage?: string | null;
   metadata?: JsonRecord | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type Claim = {
@@ -37,6 +41,8 @@ export type Claim = {
   estimated_cost?: number | string | null;
   status?: string | null;
   metadata?: JsonRecord | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type DocumentItem = {
@@ -49,6 +55,7 @@ export type DocumentItem = {
   processing_status: string;
   processing_error?: string | null;
   ai_result?: JsonRecord | null;
+  created_at: string;
 };
 
 export const api = axios.create({

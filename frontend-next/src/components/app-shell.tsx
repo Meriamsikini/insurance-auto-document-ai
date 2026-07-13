@@ -1,18 +1,19 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { ShieldCheck, LayoutDashboard, Users, Car, ClipboardCheck, FileStack, RefreshCw } from "lucide-react";
+import { ShieldCheck, LayoutDashboard, Users, Car, ClipboardCheck, FileStack, FolderKanban, RefreshCw } from "lucide-react";
 import type { Client, Vehicle, Claim } from "@/lib/api";
 import { GlobalSearch } from "./global-search";
 import { NotificationsBell } from "./notifications-bell";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { key: "overview", label: "Vue d'ensemble", icon: LayoutDashboard },
+  { key: "overview", label: "Dashboard", icon: LayoutDashboard },
   { key: "clients", label: "Clients", icon: Users },
   { key: "vehicles", label: "Vehicules", icon: Car },
   { key: "claims", label: "Sinistres", icon: ClipboardCheck },
   { key: "documents", label: "Documents", icon: FileStack },
+  { key: "dossiers", label: "Dossiers", icon: FolderKanban },
 ];
 
 export function AppShell({
@@ -36,14 +37,14 @@ export function AppShell({
 }) {
   return (
     <div className="flex min-h-screen bg-canvas">
-      <aside className="hidden w-64 shrink-0 flex-col bg-ink text-slate-200 lg:flex">
+      <aside className="hidden w-64 shrink-0 flex-col border-r border-line bg-surface lg:flex">
         <div className="flex items-center gap-3 px-5 py-6">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-teal-500 text-white shadow-glow">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-sky-400 text-white shadow-glow">
             <ShieldCheck size={20} />
           </span>
           <div>
-            <div className="text-base font-extrabold text-white">AssurAuto</div>
-            <div className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Espace gestion</div>
+            <div className="text-base font-extrabold text-ink">AssurAuto</div>
+            <div className="text-[11px] font-medium uppercase tracking-wide text-ink3">Espace gestion</div>
           </div>
         </div>
 
@@ -57,7 +58,7 @@ export function AppShell({
                 onClick={() => onNavigate(item.key)}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition",
-                  isActive ? "bg-white/10 text-white" : "text-slate-400 hover:bg-white/5 hover:text-slate-100",
+                  isActive ? "bg-brand-500/12 text-brand-300" : "text-ink2 hover:bg-surface2 hover:text-ink",
                 )}
               >
                 <Icon size={17} />
@@ -67,30 +68,30 @@ export function AppShell({
           })}
         </nav>
 
-        <div className="mx-3 mb-4 mt-6 grid grid-cols-3 gap-2 rounded-xl bg-white/5 p-3 text-center">
+        <div className="mx-3 mb-4 mt-6 grid grid-cols-3 gap-2 rounded-xl bg-surface2 p-3 text-center">
           <MiniStat label="Clients" value={stats.clients} />
           <MiniStat label="Vehic." value={stats.vehicles} />
           <MiniStat label="Sinis." value={stats.claims} />
         </div>
 
-        <div className="border-t border-white/10 px-5 py-4 text-[11px] text-slate-500">AssurAuto Pro &middot; v2.0</div>
+        <div className="border-t border-line px-5 py-4 text-[11px] text-ink3">AssurAuto Pro &middot; v2.0</div>
       </aside>
 
       <div className="flex min-h-screen flex-1 flex-col">
-        <header className="sticky top-0 z-40 flex items-center gap-3 border-b border-line bg-white/85 px-4 py-3 backdrop-blur lg:px-6">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-brand-500 to-teal-500 text-white lg:hidden">
+        <header className="sticky top-0 z-40 flex items-center gap-3 border-b border-line bg-surface/90 px-4 py-3 backdrop-blur lg:px-6">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-brand-500 to-sky-400 text-white lg:hidden">
             <ShieldCheck size={18} />
           </span>
           <GlobalSearch onSelectClient={onSelectClient} onSelectVehicle={onSelectVehicle} onSelectClaim={onSelectClaim} />
           <div className="ml-auto flex items-center gap-2">
             <button
               onClick={onRefresh}
-              className="flex h-9 items-center gap-2 rounded-lg border border-line bg-white px-3 text-sm font-semibold text-slate-600 shadow-card transition hover:border-brand-300 hover:text-brand-700"
+              className="flex h-9 items-center gap-2 rounded-lg border border-line bg-surface2 px-3 text-sm font-semibold text-ink2 shadow-card transition hover:border-brand-400 hover:text-ink"
             >
               <RefreshCw size={15} /> <span className="hidden sm:inline">Rafraichir</span>
             </button>
             <NotificationsBell />
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-100 text-sm font-bold text-brand-700">AA</span>
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-500/15 text-sm font-bold text-brand-300">AA</span>
           </div>
         </header>
 
@@ -103,8 +104,8 @@ export function AppShell({
 function MiniStat({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <div className="text-sm font-extrabold text-white">{value}</div>
-      <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{label}</div>
+      <div className="text-sm font-extrabold text-ink">{value}</div>
+      <div className="text-[10px] font-semibold uppercase tracking-wide text-ink3">{label}</div>
     </div>
   );
 }

@@ -85,33 +85,33 @@ export function GlobalSearch({
           setOpen(true);
           setTimeout(() => inputRef.current?.focus(), 0);
         }}
-        className="flex w-full items-center gap-2 rounded-lg border border-line bg-white px-3 py-2 text-sm text-slate-400 shadow-card transition hover:border-brand-300"
+        className="flex w-full items-center gap-2 rounded-lg border border-line bg-surface2 px-3 py-2 text-sm text-ink3 shadow-card transition hover:border-brand-400"
       >
         <Search size={16} />
         <span className="flex-1 truncate text-left">Rechercher un client, vehicule, sinistre...</span>
-        <kbd className="hidden rounded-md border border-line bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 sm:inline">Ctrl K</kbd>
+        <kbd className="hidden rounded-md border border-line bg-surface px-1.5 py-0.5 text-[10px] font-semibold text-ink3 sm:inline">Ctrl K</kbd>
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 z-50 mt-2 animate-slide-down overflow-hidden rounded-2xl border border-line bg-white shadow-popover">
+        <div className="absolute left-0 right-0 z-50 mt-2 animate-slide-down overflow-hidden rounded-2xl border border-line bg-surface shadow-popover">
           <div className="flex items-center gap-2 border-b border-line px-3 py-2.5">
-            <Search size={16} className="text-slate-400" />
+            <Search size={16} className="text-ink3" />
             <input
               ref={inputRef}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Nom, CIN, plaque, N de sinistre..."
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
+              className="flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink3"
             />
-            {loading && <Loader2 size={14} className="animate-spin text-slate-400" />}
-            <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-600">
+            {loading && <Loader2 size={14} className="animate-spin text-ink3" />}
+            <button onClick={() => setOpen(false)} className="text-ink3 hover:text-ink">
               <X size={14} />
             </button>
           </div>
           <div className="max-h-96 overflow-y-auto p-2">
-            {query.trim().length < 2 && <div className="p-4 text-center text-sm text-slate-400">Tapez au moins 2 caracteres.</div>}
+            {query.trim().length < 2 && <div className="p-4 text-center text-sm text-ink3">Tapez au moins 2 caracteres.</div>}
             {query.trim().length >= 2 && !loading && !hasResults && (
-              <div className="p-4 text-center text-sm text-slate-400">Aucun resultat pour &laquo;&nbsp;{query}&nbsp;&raquo;.</div>
+              <div className="p-4 text-center text-sm text-ink3">Aucun resultat pour &laquo;&nbsp;{query}&nbsp;&raquo;.</div>
             )}
 
             {activeResults && activeResults.clients.length > 0 && (
@@ -174,7 +174,7 @@ export function GlobalSearch({
 function ResultGroup({ label, icon, children }: { label: string; icon: ReactNode; children: ReactNode }) {
   return (
     <div className="mb-1">
-      <div className="flex items-center gap-1.5 px-2 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+      <div className="flex items-center gap-1.5 px-2 py-1.5 text-[11px] font-bold uppercase tracking-wide text-ink3">
         {icon}
         {label}
       </div>
@@ -185,9 +185,9 @@ function ResultGroup({ label, icon, children }: { label: string; icon: ReactNode
 
 function ResultRow({ title, subtitle, onClick }: { title: string; subtitle?: string; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="flex flex-col rounded-lg px-3 py-2 text-left transition hover:bg-brand-50">
+    <button onClick={onClick} className="flex flex-col rounded-lg px-3 py-2 text-left transition hover:bg-surface2">
       <span className="truncate text-sm font-semibold text-ink">{title}</span>
-      {subtitle && <span className="truncate text-xs text-slate-500">{subtitle}</span>}
+      {subtitle && <span className="truncate text-xs text-ink3">{subtitle}</span>}
     </button>
   );
 }

@@ -1,617 +1,1242 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AssurAuto - Gestion Client Vehicule Sinistre</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AssurAuto Pro — Plateforme de gestion</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
-*{box-sizing:border-box}
+/* ===== RESET & TOKENS ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#f5f7fb;--panel:#fff;--panel2:#f9fafc;--text:#182033;--muted:#64708a;--faint:#8a94a8;
-  --line:#dfe5ef;--line2:#cfd8e8;--brand:#2563eb;--brand2:#0891b2;--ok:#059669;--warn:#d97706;--bad:#dc2626;
-  --radius:8px;--mono:"DM Mono",monospace;--font:Inter,system-ui,-apple-system,Segoe UI,sans-serif;
+  --bg:#0f1117;
+  --surface:#171b26;
+  --surface2:#1e2333;
+  --surface3:#252b3b;
+  --border:#2d3450;
+  --border-focus:#4f6ef7;
+  --accent:#4f6ef7;
+  --accent2:#38bdf8;
+  --success:#10b981;
+  --warning:#f59e0b;
+  --danger:#ef4444;
+  --text:#e8eaf0;
+  --text2:#8b90a8;
+  --text3:#5a5f78;
+  --font:'DM Sans',sans-serif;
+  --mono:'DM Mono',monospace;
+  --radius:10px;
+  --radius-sm:6px;
+  --transition:all 0.18s cubic-bezier(0.4,0,0.2,1);
 }
-body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px}
-button,input,select,textarea{font:inherit}
-.topbar{height:56px;background:#121826;color:#fff;display:flex;align-items:center;gap:16px;padding:0 18px;border-bottom:1px solid #20283a}
-.brand{display:flex;align-items:center;gap:10px;font-weight:700}
-.brand-icon{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:grid;place-items:center}
-.topbar .hint{color:#aab4c7;font-size:12px;margin-left:auto}
-.btn{border:1px solid var(--line2);background:#fff;color:var(--text);border-radius:7px;padding:8px 11px;display:inline-flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;font-weight:600;min-height:36px}
-.btn:hover{border-color:var(--brand);color:var(--brand)}
-.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
-.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
-.btn.bad{background:#fff;border-color:#fecaca;color:var(--bad)}
-.btn.small{padding:6px 9px;min-height:30px;font-size:12px}
-.btn:disabled{opacity:.45;cursor:not-allowed}
-.app{display:grid;grid-template-columns:310px minmax(420px,1fr) 420px;gap:14px;padding:14px;height:calc(100vh - 56px)}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;min-height:0;display:flex;flex-direction:column}
-.panel-head{padding:13px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:9px;justify-content:space-between;background:var(--panel2)}
-.panel-title{font-weight:700;display:flex;align-items:center;gap:8px}
-.panel-body{padding:14px;overflow:auto;min-height:0}
-.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:#fff;border-radius:7px;padding:0 9px;margin-bottom:12px}
-.search input{border:0;outline:0;padding:9px 0;background:transparent;width:100%}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
-.stat{border:1px solid var(--line);border-radius:7px;background:#fff;padding:9px}
-.stat b{display:block;font-size:19px}
-.stat span{font-size:11px;color:var(--muted);font-weight:600}
-.tree{display:flex;flex-direction:column;gap:8px}
-.tree-empty{color:var(--muted);font-size:13px;padding:12px;border:1px dashed var(--line2);border-radius:7px}
-.node{border:1px solid var(--line);background:#fff;border-radius:8px;overflow:hidden}
-.node-main{width:100%;border:0;background:transparent;text-align:left;padding:10px 11px;display:flex;gap:9px;align-items:flex-start;cursor:pointer;color:var(--text)}
-.node-main:hover{background:#f8fbff}
-.node-main.active{background:#eff6ff;color:#1d4ed8}
-.node-icon{width:26px;height:26px;border-radius:6px;display:grid;place-items:center;background:#eef2ff;color:var(--brand);flex:0 0 auto}
-.node-label{font-weight:700;line-height:1.25}
-.node-sub{font-size:12px;color:var(--muted);margin-top:2px}
-.children{border-top:1px solid var(--line);padding:7px 7px 8px 18px;background:#fbfcff;display:flex;flex-direction:column;gap:6px}
-.child{border:1px solid transparent;background:transparent;border-radius:7px;padding:8px;text-align:left;cursor:pointer;display:flex;gap:8px;align-items:flex-start;color:var(--text)}
-.child:hover{background:#fff;border-color:var(--line)}
-.child.active{background:#fff;border-color:#bfdbfe;color:#1d4ed8}
-.claim{margin-left:26px}
-.tabs{display:flex;gap:5px;padding:8px;border-bottom:1px solid var(--line);background:var(--panel2)}
-.tab{border:1px solid transparent;background:transparent;color:var(--muted);border-radius:7px;padding:8px 11px;cursor:pointer;font-weight:700}
-.tab.active{background:#fff;border-color:var(--line);color:var(--brand)}
-.section{display:none}
-.section.active{display:block}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.field{display:flex;flex-direction:column;gap:5px}
-.field.full{grid-column:1/-1}
-label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:800}
-input,select,textarea{width:100%;border:1px solid var(--line2);border-radius:7px;padding:9px 10px;background:#fff;color:var(--text);outline:0}
-textarea{min-height:90px;resize:vertical}
-input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
-.form-actions{display:flex;justify-content:space-between;gap:8px;margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
-.muted{color:var(--muted)}
-.mono{font-family:var(--mono)}
-.badge{border-radius:999px;padding:3px 8px;font-size:11px;font-weight:800;background:#edf2f7;color:#475569;display:inline-flex;align-items:center;gap:4px}
-.badge.ok{background:#dcfce7;color:#047857}.badge.warn{background:#fef3c7;color:#b45309}.badge.info{background:#dbeafe;color:#1d4ed8}.badge.bad{background:#fee2e2;color:#b91c1c}
-.upload-zone{border:1px solid var(--line);background:#fff;border-radius:8px;padding:12px;margin-bottom:14px}
-.upload-head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:9px}
-.upload-title{font-weight:800}
-.form-section{border:1px solid var(--line);border-radius:8px;background:#fff;margin-bottom:14px;overflow:hidden}
-.form-section-head{padding:12px 14px;border-bottom:1px solid var(--line);background:var(--panel2);display:flex;align-items:center;justify-content:space-between;gap:10px}
-.form-section-title{font-weight:800;display:flex;align-items:center;gap:8px}
-.form-section-body{padding:14px}
-.doc-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.doc-btn{position:relative;overflow:hidden;justify-content:flex-start}
-.doc-btn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  font-size:14px;
+  line-height:1.6;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
+
+/* ===== TOP BAR ===== */
+.topbar{
+  display:flex;align-items:center;gap:16px;
+  padding:0 24px;height:56px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;
+}
+.logo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px;letter-spacing:-0.3px}
+.logo-icon{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;
+}
+.topbar-nav{display:flex;gap:2px;margin-left:auto}
+.nav-btn{
+  display:flex;align-items:center;gap:7px;
+  padding:7px 14px;border-radius:var(--radius-sm);
+  border:none;background:transparent;color:var(--text2);
+  cursor:pointer;font-family:var(--font);font-size:13px;font-weight:500;
+  transition:var(--transition);white-space:nowrap;
+}
+.nav-btn:hover{background:var(--surface2);color:var(--text)}
+.nav-btn.active{background:var(--surface3);color:var(--accent)}
+.nav-btn i{font-size:13px}
+.topbar-right{display:flex;align-items:center;gap:10px;margin-left:16px}
+.avatar{
+  width:32px;height:32px;border-radius:50%;
+  background:var(--accent);display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:600;cursor:pointer;
+}
+.notif-btn{
+  width:32px;height:32px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);background:transparent;color:var(--text2);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:var(--transition);position:relative;
+}
+.notif-btn:hover{color:var(--text);border-color:var(--accent)}
+.notif-dot{
+  position:absolute;top:6px;right:6px;
+  width:6px;height:6px;border-radius:50%;background:var(--accent);
+}
+
+/* ===== TABS ===== */
+.page{display:none;padding:24px;max-width:1280px;margin:0 auto}
+.page.active{display:block;animation:fadeIn 0.2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ===== UPLOAD STRIP (compact) ===== */
+.upload-strip{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:14px 18px;
+  margin-bottom:20px;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.upload-strip-title{
+  font-size:12px;font-weight:600;color:var(--text3);
+  text-transform:uppercase;letter-spacing:0.6px;
+  min-width:max-content;
+}
+.upload-strip-docs{display:flex;gap:10px;flex-wrap:wrap;flex:1}
+.upload-chip{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 12px;
+  border:1.5px dashed var(--border);
+  border-radius:var(--radius-sm);
+  cursor:pointer;
+  transition:var(--transition);
+  background:var(--surface2);
+  min-width:160px;position:relative;
+  overflow:hidden;
+}
+.upload-chip:hover{border-color:var(--accent);background:rgba(79,110,247,0.07)}
+.upload-chip.uploaded{
+  border-style:solid;border-color:var(--success);
+  background:rgba(16,185,129,0.07);
+}
+.upload-chip.uploading{border-color:var(--warning);background:rgba(245,158,11,0.07)}
+.upload-chip input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.chip-icon{
+  width:26px;height:26px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;flex-shrink:0;
+}
+.chip-icon.blue{background:rgba(79,110,247,0.15);color:var(--accent)}
+.chip-icon.teal{background:rgba(56,189,248,0.15);color:var(--accent2)}
+.chip-icon.amber{background:rgba(245,158,11,0.15);color:var(--warning)}
+.chip-icon.green{background:rgba(16,185,129,0.15);color:var(--success)}
+.chip-icon.red{background:rgba(239,68,68,0.15);color:var(--danger)}
+.chip-meta{flex:1;min-width:0}
+.chip-label{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip-sub{font-size:10px;color:var(--text3);margin-top:1px}
+.chip-status{font-size:11px;flex-shrink:0}
+.chip-status.ok{color:var(--success)}
+.chip-status.pending{color:var(--text3)}
+.chip-status.loading{color:var(--warning)}
+
+/* Progress bar inside chip */
+.chip-progress{
+  position:absolute;bottom:0;left:0;height:2px;
+  background:var(--warning);border-radius:0 0 0 var(--radius-sm);
+  transition:width 0.3s;width:0%;
+}
+.upload-chip.uploading .chip-progress{width:65%}
+.upload-chip.uploaded .chip-progress{width:100%;background:var(--success)}
+
+/* AI badge */
+.ai-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  background:rgba(79,110,247,0.12);border:1px solid rgba(79,110,247,0.25);
+  color:var(--accent);font-size:10px;font-weight:600;
+  padding:2px 7px;border-radius:20px;letter-spacing:0.3px;
+}
+
+/* ===== SECTION HEADER ===== */
+.section-head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;
+}
+.section-head h2{font-size:15px;font-weight:600;letter-spacing:-0.2px}
+.section-head-actions{display:flex;gap:8px}
+
+/* ===== FORM GRID ===== */
+.form-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:20px;
+  margin-bottom:16px;
+}
+.form-card-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-bottom:14px;margin-bottom:16px;
+  border-bottom:1px solid var(--border);
+}
+.form-card-title{
+  display:flex;align-items:center;gap:8px;
+  font-size:13px;font-weight:600;color:var(--text);
+}
+.form-card-title i{font-size:13px}
+.form-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:14px;
+}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+.form-group.half{grid-column:span 2}
+label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px}
+input,select,textarea{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  color:var(--text);
+  font-family:var(--font);
+  font-size:13px;
+  padding:9px 12px;
+  transition:var(--transition);
+  outline:none;
+  width:100%;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--border-focus);background:var(--surface3)}
+input.auto-filled{border-color:rgba(79,110,247,0.4);background:rgba(79,110,247,0.05)}
+input.auto-filled:focus{border-color:var(--border-focus);background:var(--surface3)}
+select option{background:var(--surface2)}
+textarea{resize:vertical;min-height:80px}
+input::placeholder,textarea::placeholder{color:var(--text3)}
+
+/* Modified indicator */
+input.modified{border-color:rgba(245,158,11,0.5);background:rgba(245,158,11,0.05)}
+
+/* ===== STATUS BADGES ===== */
+.badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 9px;border-radius:20px;
+  font-size:11px;font-weight:600;
+}
+.badge-ok{background:rgba(16,185,129,0.12);color:var(--success);border:1px solid rgba(16,185,129,0.2)}
+.badge-warn{background:rgba(245,158,11,0.12);color:var(--warning);border:1px solid rgba(245,158,11,0.2)}
+.badge-bad{background:rgba(239,68,68,0.12);color:var(--danger);border:1px solid rgba(239,68,68,0.2)}
+.badge-info{background:rgba(79,110,247,0.12);color:var(--accent);border:1px solid rgba(79,110,247,0.2)}
+.badge-neutral{background:var(--surface3);color:var(--text2);border:1px solid var(--border)}
+
+/* ===== BUTTONS ===== */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:8px 16px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);
+  background:var(--surface2);color:var(--text);
+  font-family:var(--font);font-size:13px;font-weight:500;
+  cursor:pointer;transition:var(--transition);white-space:nowrap;
+}
+.btn:hover{background:var(--surface3);border-color:var(--accent)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover{background:#3d5be0;border-color:#3d5be0}
+.btn-success{background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.3);color:var(--success)}
+.btn-success:hover{background:rgba(16,185,129,0.25)}
+.btn-danger{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.25);color:var(--danger)}
+.btn-danger:hover{background:rgba(239,68,68,0.2)}
+.btn-sm{padding:5px 11px;font-size:12px}
+.btn i{font-size:12px}
+
+/* ===== STATS ROW ===== */
+.stats-row{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+  gap:12px;margin-bottom:20px;
+}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px 16px;
+  display:flex;flex-direction:column;gap:4px;
+}
+.stat-num{font-size:24px;font-weight:600;letter-spacing:-0.5px}
+.stat-lbl{font-size:11px;color:var(--text3);font-weight:500}
+.stat-card.accent .stat-num{color:var(--accent)}
+.stat-card.green .stat-num{color:var(--success)}
+.stat-card.warn .stat-num{color:var(--warning)}
+.stat-card.red .stat-num{color:var(--danger)}
+
+/* ===== TABLE ===== */
+.table-wrapper{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead tr{background:var(--surface2)}
+th{
+  padding:10px 14px;text-align:left;
+  font-size:11px;font-weight:600;color:var(--text3);
+  text-transform:uppercase;letter-spacing:0.5px;
+  border-bottom:1px solid var(--border);
+}
+td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+tr.selected td{background:rgba(79,110,247,0.08)}
+
+/* ===== SUB TABS ===== */
+.sub-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px;overflow-x:auto}
+.sub-tab{
+  padding:10px 16px;background:transparent;border:none;
+  color:var(--text3);cursor:pointer;font-family:var(--font);
+  font-size:13px;font-weight:500;border-bottom:2px solid transparent;
+  transition:var(--transition);white-space:nowrap;
+}
+.sub-tab:hover{color:var(--text)}
+.sub-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.sub-page{display:none}
+.sub-page.active{display:block;animation:fadeIn 0.15s ease}
+
+/* ===== FLASH NOTIFICATION ===== */
+.flash{
+  position:fixed;bottom:24px;right:24px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:12px 16px;
+  display:flex;align-items:center;gap:10px;
+  font-size:13px;min-width:260px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.4);
+  z-index:9999;transform:translateY(80px);opacity:0;
+  transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.flash.show{transform:none;opacity:1}
+.flash i{font-size:16px}
+.flash.flash-ok i{color:var(--success)}
+.flash.flash-info i{color:var(--accent)}
+
+/* ===== PROGRESS STEPS ===== */
+.progress-steps{display:flex;gap:0;margin-bottom:20px}
+.step{
+  flex:1;display:flex;align-items:center;
+  padding:10px 0;position:relative;
+}
+.step-dot{
+  width:28px;height:28px;border-radius:50%;
+  border:2px solid var(--border);background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:600;color:var(--text3);
+  flex-shrink:0;z-index:1;transition:var(--transition);
+}
+.step.done .step-dot{background:var(--success);border-color:var(--success);color:#fff}
+.step.active .step-dot{background:var(--accent);border-color:var(--accent);color:#fff}
+.step-line{flex:1;height:2px;background:var(--border);margin:0 4px}
+.step.done .step-line{background:var(--success)}
+.step-label{position:absolute;top:36px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--text3);white-space:nowrap}
+.step.active .step-label{color:var(--accent);font-weight:600}
+.step.done .step-label{color:var(--success)}
+
+/* ===== DIVIDER ===== */
+.divider{height:1px;background:var(--border);margin:16px 0}
+
+/* ===== DOC LIST ===== */
 .doc-list{display:flex;flex-direction:column;gap:8px}
-.doc-row{border:1px solid var(--line);border-radius:7px;padding:9px;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:8px}
-.right-stack{display:flex;flex-direction:column;gap:14px}
-.notice{border:1px solid #bfdbfe;background:#eff6ff;color:#1e3a8a;border-radius:8px;padding:10px;font-size:13px}
-.flash{position:fixed;right:16px;bottom:16px;display:none;padding:11px 14px;border-radius:8px;background:#111827;color:#fff;box-shadow:0 12px 35px rgba(15,23,42,.22);z-index:50;max-width:420px}
-.flash.show{display:flex;align-items:center;gap:8px}.flash.ok{background:#065f46}.flash.err{background:#991b1b}.flash.info{background:#1e3a8a}
-@media(max-width:1180px){.app{grid-template-columns:320px 1fr;height:auto}.right-stack{grid-column:1/-1}.panel{min-height:420px}}
-@media(max-width:780px){.app{grid-template-columns:1fr;padding:10px}.topbar .hint{display:none}.grid,.doc-buttons,.stats{grid-template-columns:1fr}.form-actions{flex-direction:column}.btn{width:100%}}
+.doc-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:var(--radius-sm);
+  background:var(--surface2);border:1px solid var(--border);
+}
+.doc-item-icon{font-size:14px;width:20px;text-align:center}
+.doc-item-name{flex:1;font-size:13px}
+.doc-item-status{font-size:12px;margin-left:auto}
+
+/* ===== SEARCH BAR ===== */
+.search-bar{
+  display:flex;align-items:center;gap:8px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:7px 12px;
+  transition:var(--transition);
+}
+.search-bar:focus-within{border-color:var(--accent)}
+.search-bar i{color:var(--text3);font-size:13px}
+.search-bar input{background:transparent;border:none;flex:1;color:var(--text);font-size:13px;outline:none}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+  .topbar-nav .nav-btn span{display:none}
+  .form-grid{grid-template-columns:1fr}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .upload-strip{flex-direction:column;align-items:flex-start}
+}
 </style>
 </head>
 <body>
-<header class="topbar">
-  <div class="brand"><div class="brand-icon"><i class="fa-solid fa-car-burst"></i></div>AssurAuto</div>
-  <div class="hint">Structure active: Client -> Vehicules -> Sinistres</div>
-  <button class="btn small" id="refreshBtn"><i class="fa-solid fa-rotate"></i> Rafraichir</button>
-</header>
 
-<main class="app">
-  <aside class="panel">
-    <div class="panel-head">
-      <div class="panel-title"><i class="fa-solid fa-sitemap"></i> Dossiers</div>
-      <button class="btn small primary" id="newClientBtn"><i class="fa-solid fa-plus"></i> Client</button>
-    </div>
-    <div class="panel-body">
-      <div class="stats">
-        <div class="stat"><b id="statClients">0</b><span>Clients</span></div>
-        <div class="stat"><b id="statVehicles">0</b><span>Vehicules</span></div>
-        <div class="stat"><b id="statClaims">0</b><span>Sinistres</span></div>
+<!-- ===== TOP BAR ===== -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon"><i class="fa-solid fa-shield-halved"></i></div>
+    AssurAuto Pro
+  </div>
+  <div class="topbar-nav">
+    <button class="nav-btn active" onclick="showPage('clients',this)">
+      <i class="fa-solid fa-users"></i><span>Clients</span>
+    </button>
+    <button class="nav-btn" onclick="showPage('vehicules',this)">
+      <i class="fa-solid fa-car"></i><span>Véhicules</span>
+    </button>
+    <button class="nav-btn" onclick="showPage('sinistres',this)">
+      <i class="fa-solid fa-triangle-exclamation"></i><span>Sinistres</span>
+    </button>
+  </div>
+  <div class="topbar-right">
+    <button class="notif-btn"><i class="fa-solid fa-bell"></i><div class="notif-dot"></div></button>
+    <div class="avatar">AG</div>
+  </div>
+</div>
+
+<!-- ===================================================== -->
+<!-- PAGE : CLIENTS                                         -->
+<!-- ===================================================== -->
+<div class="page active" id="page-clients">
+
+  <!-- UPLOAD STRIP -->
+  <div class="upload-strip">
+    <span class="upload-strip-title"><i class="fa-solid fa-cloud-arrow-up" style="margin-right:5px"></i>Pièces client</span>
+    <div class="upload-strip-docs">
+
+      <div class="upload-chip" id="chip-cin" onclick="triggerUpload('file-cin')">
+        <input type="file" id="file-cin" accept=".jpg,.jpeg,.png,.pdf" onchange="handleUpload(this,'chip-cin','cin')">
+        <div class="chip-icon blue"><i class="fa-solid fa-id-card"></i></div>
+        <div class="chip-meta">
+          <div class="chip-label">CIN / Passeport</div>
+          <div class="chip-sub">JPG, PNG, PDF</div>
+        </div>
+        <span class="chip-status pending" id="status-cin"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
+        <div class="chip-progress" id="prog-cin"></div>
       </div>
-      <div class="search"><i class="fa-solid fa-magnifying-glass muted"></i><input id="searchInput" placeholder="Rechercher client, CIN, plaque..."></div>
-      <div id="tree" class="tree"></div>
-    </div>
-  </aside>
 
-  <section class="panel">
-    <div class="tabs">
-      <button class="tab active" data-tab="client"><i class="fa-solid fa-user"></i> Client</button>
-      <button class="tab" data-tab="vehicle"><i class="fa-solid fa-car"></i> Vehicule</button>
-      <button class="tab" data-tab="claim"><i class="fa-solid fa-file-medical"></i> Sinistre</button>
-    </div>
-    <div class="panel-body">
-      <section id="tab-client" class="section active">
-        <div class="upload-zone">
-          <div class="upload-head">
-            <div><div class="upload-title">Pieces client</div><div class="muted">Upload OCR avant ou apres sauvegarde</div></div>
-            <label class="badge info"><input type="checkbox" id="autoOcr" checked> OCR auto</label>
-          </div>
-          <div class="doc-buttons">
-            <button class="btn doc-btn"><i class="fa-solid fa-id-card"></i> CIN / Passeport<input type="file" data-doc="cin" accept=".pdf,.jpg,.jpeg,.png,.webp"></button>
-            <button class="btn doc-btn"><i class="fa-solid fa-house"></i> Justificatif domicile<input type="file" data-doc="domicile" accept=".pdf,.jpg,.jpeg,.png,.webp"></button>
-          </div>
+      <div class="upload-chip" id="chip-domicile" onclick="triggerUpload('file-domicile')">
+        <input type="file" id="file-domicile" accept=".jpg,.jpeg,.png,.pdf" onchange="handleUpload(this,'chip-domicile','domicile')">
+        <div class="chip-icon teal"><i class="fa-solid fa-house"></i></div>
+        <div class="chip-meta">
+          <div class="chip-label">Justificatif domicile</div>
+          <div class="chip-sub">Facture, quittance</div>
         </div>
-        <form id="clientForm">
-          <div class="form-section">
-            <div class="form-section-head">
-              <div class="form-section-title"><i class="fa-solid fa-id-card"></i> Informations CIN / Passeport</div>
-              <button type="button" class="btn small" id="resetCinBtn"><i class="fa-solid fa-rotate-left"></i> Réinitialiser</button>
-            </div>
-            <div class="form-section-body grid" id="cinFields">
-              <div class="field"><label>Nom *</label><input id="cinNom" required placeholder="-"></div>
-              <div class="field"><label>Prénom *</label><input id="cinPrenom" required placeholder="-"></div>
-              <div class="field"><label>N° CIN / Passeport *</label><input id="cinNumero" class="mono" required placeholder="-"></div>
-              <div class="field"><label>Date de naissance</label><input id="cinNaissance" type="date"></div>
-              <div class="field"><label>Sexe</label><select id="cinSexe"><option value="">-</option><option>Masculin</option><option>Féminin</option></select></div>
-              <div class="field"><label>Date d'expiration</label><input id="cinExpiration" type="date"></div>
-              <div class="field"><label>Adresse</label><input id="cinAdresse" placeholder="-"></div>
-              <div class="field"><label>Ville</label><input id="cinVille" placeholder="-"></div>
-            </div>
-          </div>
-
-          <div class="form-section">
-            <div class="form-section-head">
-              <div class="form-section-title"><i class="fa-solid fa-house"></i> Justificatif de domicile</div>
-            </div>
-            <div class="form-section-body grid" id="domicileFields">
-              <div class="field full"><label>Adresse confirmée</label><input id="domAdresse" placeholder="-"></div>
-              <div class="field"><label>Type de document</label><select id="domType"><option value="">-</option><option>Facture électricité</option><option>Facture eau</option><option>Quittance de loyer</option><option>Relevé bancaire</option><option>Attestation résidence</option></select></div>
-              <div class="field"><label>Émetteur</label><input id="domEmetteur" placeholder="-"></div>
-              <div class="field"><label>Date du document</label><input id="domDate" type="month"></div>
-            </div>
-          </div>
-
-          <div class="form-section">
-            <div class="form-section-head">
-              <div class="form-section-title"><i class="fa-solid fa-user-gear"></i> Informations complémentaires</div>
-            </div>
-            <div class="form-section-body grid" id="clientExtraFields">
-              <div class="field"><label>Téléphone</label><input id="clientPhone" placeholder="+212 6XX XXX XXX"></div>
-              <div class="field"><label>Email</label><input id="clientEmail" type="email" placeholder="client@email.ma"></div>
-              <div class="field"><label>Profession</label><input id="clientProfession" placeholder="-"></div>
-              <div class="field"><label>Statut client</label><select id="clientType"><option value="individual">Particulier</option><option value="professional">Professionnel</option><option value="company">Entreprise</option></select></div>
-            </div>
-          </div>
-        </form>
-        <div class="form-actions">
-          <button class="btn bad" id="deleteClientBtn"><i class="fa-solid fa-trash"></i> Supprimer client</button>
-          <div class="toolbar">
-            <button class="btn" id="clearClientBtn"><i class="fa-solid fa-eraser"></i> Nouveau</button>
-            <button class="btn primary" id="saveClientBtn"><i class="fa-solid fa-floppy-disk"></i> Enregistrer client</button>
-          </div>
-        </div>
-      </section>
-
-      <section id="tab-vehicle" class="section">
-        <div class="notice" id="vehicleNotice">Selectionnez ou enregistrez un client avant d'ajouter un vehicule.</div>
-        <div class="upload-zone">
-          <div class="upload-head">
-            <div><div class="upload-title">Documents vehicule</div><div class="muted">Ils seront lies au client actif et au vehicule sauvegarde</div></div>
-            <button class="btn small" id="newVehicleBtn"><i class="fa-solid fa-plus"></i> Nouveau vehicule</button>
-          </div>
-          <div class="doc-buttons">
-            <button class="btn doc-btn"><i class="fa-solid fa-file-lines"></i> Carte grise<input type="file" data-doc="cg" accept=".pdf,.jpg,.jpeg,.png,.webp"></button>
-            <button class="btn doc-btn"><i class="fa-solid fa-id-card"></i> Permis<input type="file" data-doc="permis" accept=".pdf,.jpg,.jpeg,.png,.webp"></button>
-            <button class="btn doc-btn"><i class="fa-solid fa-wrench"></i> Controle technique<input type="file" data-doc="ct" accept=".pdf,.jpg,.jpeg,.png,.webp"></button>
-            <button class="btn doc-btn"><i class="fa-solid fa-shield-halved"></i> Attestation<input type="file" data-doc="att" accept=".pdf,.jpg,.jpeg,.png,.webp"></button>
-          </div>
-        </div>
-        <form id="vehicleForm" class="grid">
-          <div class="field"><label>Client lie</label><input id="vehicleClientLabel" disabled></div>
-          <div class="field"><label>Immatriculation *</label><input id="vehicleReg" class="mono" required></div>
-          <div class="field"><label>Marque</label><input id="vehicleMake"></div>
-          <div class="field"><label>Modele</label><input id="vehicleModel"></div>
-          <div class="field"><label>VIN / Chassis</label><input id="vehicleVin" class="mono"></div>
-          <div class="field"><label>Annee</label><input id="vehicleYear" type="number" min="1900" max="2100"></div>
-          <div class="field"><label>Usage</label><select id="vehicleUsage"><option value="">-</option><option>VP - Tourisme</option><option>VUL</option><option>PL</option><option>Moto</option></select></div>
-          <div class="field"><label>Energie</label><input id="vehicleFuel"></div>
-          <div class="field full"><label>Notes vehicule</label><textarea id="vehicleNotes"></textarea></div>
-        </form>
-        <div class="form-actions">
-          <button class="btn bad" id="deleteVehicleBtn"><i class="fa-solid fa-trash"></i> Supprimer vehicule</button>
-          <div class="toolbar">
-            <button class="btn" id="openClaimBtn"><i class="fa-solid fa-file-circle-plus"></i> Declarer sinistre</button>
-            <button class="btn primary" id="saveVehicleBtn"><i class="fa-solid fa-floppy-disk"></i> Enregistrer vehicule</button>
-          </div>
-        </div>
-      </section>
-
-      <section id="tab-claim" class="section">
-        <div class="notice" id="claimNotice">Selectionnez un vehicule pour declarer un sinistre.</div>
-        <div class="upload-zone">
-          <div class="upload-head">
-            <div><div class="upload-title">Pieces sinistre</div><div class="muted">Constat, photos, PV et devis lies au sinistre actif</div></div>
-            <button class="btn small" id="newClaimBtn"><i class="fa-solid fa-plus"></i> Nouveau sinistre</button>
-          </div>
-          <div class="doc-buttons">
-            <button class="btn doc-btn"><i class="fa-solid fa-pen-to-square"></i> Constat<input type="file" data-doc="constat" accept=".pdf,.jpg,.jpeg,.png,.webp"></button>
-            <button class="btn doc-btn"><i class="fa-solid fa-camera"></i> Photos<input type="file" data-doc="photos" accept=".jpg,.jpeg,.png,.webp"></button>
-            <button class="btn doc-btn"><i class="fa-solid fa-gavel"></i> PV police<input type="file" data-doc="pv" accept=".pdf,.jpg,.jpeg,.png,.webp"></button>
-            <button class="btn doc-btn"><i class="fa-solid fa-receipt"></i> Devis / facture<input type="file" data-doc="garage" accept=".pdf,.jpg,.jpeg,.png,.webp"></button>
-          </div>
-        </div>
-        <form id="claimForm" class="grid">
-          <div class="field"><label>Vehicule lie</label><input id="claimVehicleLabel" disabled></div>
-          <div class="field"><label>Reference</label><input id="claimNumber" class="mono" disabled></div>
-          <div class="field"><label>Date accident</label><input id="claimDate" type="date"></div>
-          <div class="field"><label>Statut</label><select id="claimStatus"><option>DECLARED</option><option>UNDER_REVIEW</option><option>DOCUMENTS_PENDING</option><option>APPROVED</option><option>REJECTED</option><option>CLOSED</option></select></div>
-          <div class="field"><label>Lieu</label><input id="claimLocation"></div>
-          <div class="field"><label>Cout estime MAD</label><input id="claimCost" type="number" step="0.01"></div>
-          <div class="field"><label>Niveau degats</label><input id="claimDamage"></div>
-          <div class="field"><label>Garage</label><input id="claimGarage"></div>
-          <div class="field full"><label>Description</label><textarea id="claimDescription"></textarea></div>
-        </form>
-        <div class="form-actions">
-          <button class="btn bad" id="deleteClaimBtn"><i class="fa-solid fa-trash"></i> Supprimer sinistre</button>
-          <div class="toolbar">
-            <button class="btn" id="claimReviewBtn"><i class="fa-solid fa-magnifying-glass-chart"></i> Envoyer expertise</button>
-            <button class="btn ok" id="closeClaimBtn"><i class="fa-solid fa-circle-check"></i> Cloturer</button>
-            <button class="btn primary" id="saveClaimBtn"><i class="fa-solid fa-floppy-disk"></i> Enregistrer sinistre</button>
-          </div>
-        </div>
-      </section>
-    </div>
-  </section>
-
-  <section class="right-stack">
-    <aside class="panel">
-      <div class="panel-head"><div class="panel-title"><i class="fa-solid fa-diagram-project"></i> Relation active</div></div>
-      <div class="panel-body">
-        <div id="activePath" class="notice">Aucun client selectionne.</div>
+        <span class="chip-status pending" id="status-domicile"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
+        <div class="chip-progress" id="prog-domicile"></div>
       </div>
-    </aside>
-    <aside class="panel">
-      <div class="panel-head"><div class="panel-title"><i class="fa-solid fa-file"></i> Documents</div></div>
-      <div class="panel-body">
-        <div id="docList" class="doc-list"></div>
-      </div>
-    </aside>
-    <aside class="panel">
-      <div class="panel-head"><div class="panel-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Cache OCR</div><button class="btn small" id="clearOcrBtn">Vider</button></div>
-      <div class="panel-body">
-        <pre id="ocrPreview" class="muted" style="white-space:pre-wrap;margin:0;font-family:var(--mono);font-size:12px"></pre>
-      </div>
-    </aside>
-  </section>
-</main>
 
-<div id="flash" class="flash"><i class="fa-solid fa-circle-info"></i><span id="flashText"></span></div>
+    </div>
+    <span class="ai-badge"><i class="fa-solid fa-wand-magic-sparkles"></i> OCR automatique</span>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card accent"><div class="stat-num">1 284</div><div class="stat-lbl">Clients actifs</div></div>
+    <div class="stat-card warn"><div class="stat-num">97</div><div class="stat-lbl">KYC en attente</div></div>
+    <div class="stat-card red"><div class="stat-num">12</div><div class="stat-lbl">Documents expirés</div></div>
+    <div class="stat-card green"><div class="stat-num">98.2%</div><div class="stat-lbl">Taux complétude</div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 380px;gap:16px">
+    <!-- Formulaire client -->
+    <div>
+      <!-- CIN -->
+      <div class="form-card" id="form-cin">
+        <div class="form-card-header">
+          <div class="form-card-title">
+            <i class="fa-solid fa-id-card" style="color:var(--accent)"></i>
+            Informations CIN / Passeport
+            <span class="ai-badge" id="badge-cin" style="display:none"><i class="fa-solid fa-wand-magic-sparkles"></i> Extrait</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="badge badge-neutral" id="cin-completude">— En attente</span>
+            <button class="btn btn-sm" onclick="clearForm('cin-form-fields')"><i class="fa-solid fa-rotate-left"></i> Réinitialiser</button>
+          </div>
+        </div>
+        <div class="form-grid" id="cin-form-fields">
+          <div class="form-group">
+            <label>Nom *</label>
+            <input type="text" id="cin-nom" placeholder="—" onchange="markModified(this)">
+          </div>
+          <div class="form-group">
+            <label>Prénom *</label>
+            <input type="text" id="cin-prenom" placeholder="—" onchange="markModified(this)">
+          </div>
+          <div class="form-group">
+            <label>N° CIN / Passeport *</label>
+            <input type="text" id="cin-numero" placeholder="—" style="font-family:var(--mono)" onchange="markModified(this)">
+          </div>
+          <div class="form-group">
+            <label>Date de naissance</label>
+            <input type="date" id="cin-naissance" onchange="markModified(this)">
+          </div>
+          <div class="form-group">
+            <label>Sexe</label>
+            <select id="cin-sexe" onchange="markModified(this)">
+              <option value="">—</option>
+              <option>Masculin</option>
+              <option>Féminin</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Date d'expiration</label>
+            <input type="date" id="cin-expiration" onchange="markModified(this)">
+          </div>
+          <div class="form-group half">
+            <label>Adresse</label>
+            <input type="text" id="cin-adresse" placeholder="—" onchange="markModified(this)">
+          </div>
+          <div class="form-group">
+            <label>Ville</label>
+            <input type="text" id="cin-ville" placeholder="—" onchange="markModified(this)">
+          </div>
+        </div>
+      </div>
+
+      <!-- DOMICILE -->
+      <div class="form-card" id="form-domicile">
+        <div class="form-card-header">
+          <div class="form-card-title">
+            <i class="fa-solid fa-house" style="color:var(--accent2)"></i>
+            Justificatif de domicile
+            <span class="ai-badge" id="badge-domicile" style="display:none"><i class="fa-solid fa-wand-magic-sparkles"></i> Extrait</span>
+          </div>
+          <span class="badge badge-neutral" id="dom-completude">— En attente</span>
+        </div>
+        <div class="form-grid">
+          <div class="form-group half">
+            <label>Adresse confirmée</label>
+            <input type="text" id="dom-adresse" placeholder="—" onchange="markModified(this)">
+          </div>
+          <div class="form-group">
+            <label>Type de document</label>
+            <select id="dom-type" onchange="markModified(this)">
+              <option value="">—</option>
+              <option>Facture électricité</option>
+              <option>Facture eau</option>
+              <option>Quittance de loyer</option>
+              <option>Relevé bancaire</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Émetteur</label>
+            <input type="text" id="dom-emetteur" placeholder="—" onchange="markModified(this)">
+          </div>
+          <div class="form-group">
+            <label>Date du document</label>
+            <input type="month" id="dom-date" onchange="markModified(this)">
+          </div>
+        </div>
+      </div>
+
+      <!-- Infos complémentaires -->
+      <div class="form-card">
+        <div class="form-card-header">
+          <div class="form-card-title"><i class="fa-solid fa-user-circle" style="color:var(--success)"></i> Informations complémentaires</div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Téléphone</label>
+            <input type="tel" id="cli-tel" placeholder="+212 6XX XXX XXX" onchange="markModified(this)">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="cli-email" placeholder="client@email.ma" onchange="markModified(this)">
+          </div>
+          <div class="form-group">
+            <label>Profession</label>
+            <input type="text" id="cli-profession" placeholder="—" onchange="markModified(this)">
+          </div>
+          <div class="form-group">
+            <label>Statut client</label>
+            <select id="cli-statut" onchange="markModified(this)">
+              <option>Particulier</option>
+              <option>Professionnel</option>
+              <option>Entreprise</option>
+            </select>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button class="btn"><i class="fa-solid fa-xmark"></i> Annuler</button>
+          <button class="btn btn-primary" onclick="saveForm('client')"><i class="fa-solid fa-floppy-disk"></i> Enregistrer le client</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Liste clients -->
+    <div>
+      <div class="section-head">
+        <h2>Clients récents</h2>
+        <button class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Nouveau</button>
+      </div>
+      <div class="search-bar" style="margin-bottom:12px">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" placeholder="Rechercher…" oninput="filterTable(this,'clients-table')">
+      </div>
+      <div class="table-wrapper">
+        <table id="clients-table">
+          <thead><tr><th>Client</th><th>CIN</th><th>Statut</th></tr></thead>
+          <tbody>
+            <tr class="selected"><td><b>Dupont J-M.</b><br><small style="color:var(--text3)">CLI-00412</small></td><td style="font-family:var(--mono);font-size:12px">BE123456</td><td><span class="badge badge-ok">Actif</span></td></tr>
+            <tr><td>Amrani S.<br><small style="color:var(--text3)">CLI-00398</small></td><td style="font-family:var(--mono);font-size:12px">AB789012</td><td><span class="badge badge-warn">KYC</span></td></tr>
+            <tr><td>Bennani K.<br><small style="color:var(--text3)">CLI-00385</small></td><td style="font-family:var(--mono);font-size:12px">CD345678</td><td><span class="badge badge-ok">Actif</span></td></tr>
+            <tr><td>Tazi M.<br><small style="color:var(--text3)">CLI-00371</small></td><td style="font-family:var(--mono);font-size:12px">EF901234</td><td><span class="badge badge-bad">Expiré</span></td></tr>
+            <tr><td>El Fassi R.<br><small style="color:var(--text3)">CLI-00360</small></td><td style="font-family:var(--mono);font-size:12px">GH567890</td><td><span class="badge badge-ok">Actif</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================== -->
+<!-- PAGE : VÉHICULES                                      -->
+<!-- ===================================================== -->
+<div class="page" id="page-vehicules">
+
+  <!-- UPLOAD STRIP -->
+  <div class="upload-strip">
+    <span class="upload-strip-title"><i class="fa-solid fa-cloud-arrow-up" style="margin-right:5px"></i>Documents véhicule</span>
+    <div class="upload-strip-docs">
+
+      <div class="upload-chip" id="chip-cg" onclick="triggerUpload('file-cg')">
+        <input type="file" id="file-cg" accept=".jpg,.jpeg,.png,.pdf" onchange="handleUpload(this,'chip-cg','cg')">
+        <div class="chip-icon blue"><i class="fa-solid fa-file-certificate"></i></div>
+        <div class="chip-meta"><div class="chip-label">Carte grise</div><div class="chip-sub">Recto/verso</div></div>
+        <span class="chip-status pending" id="status-cg"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
+        <div class="chip-progress" id="prog-cg"></div>
+      </div>
+
+      <div class="upload-chip" id="chip-permis" onclick="triggerUpload('file-permis')">
+        <input type="file" id="file-permis" accept=".jpg,.jpeg,.png,.pdf" onchange="handleUpload(this,'chip-permis','permis')">
+        <div class="chip-icon teal"><i class="fa-solid fa-id-card"></i></div>
+        <div class="chip-meta"><div class="chip-label">Permis de conduire</div><div class="chip-sub">Recto/verso</div></div>
+        <span class="chip-status pending" id="status-permis"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
+        <div class="chip-progress" id="prog-permis"></div>
+      </div>
+
+      <div class="upload-chip" id="chip-ct" onclick="triggerUpload('file-ct')">
+        <input type="file" id="file-ct" accept=".jpg,.jpeg,.png,.pdf" onchange="handleUpload(this,'chip-ct','ct')">
+        <div class="chip-icon amber"><i class="fa-solid fa-wrench"></i></div>
+        <div class="chip-meta"><div class="chip-label">Contrôle technique</div><div class="chip-sub">PDF</div></div>
+        <span class="chip-status pending" id="status-ct"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
+        <div class="chip-progress" id="prog-ct"></div>
+      </div>
+
+      <div class="upload-chip" id="chip-att" onclick="triggerUpload('file-att')">
+        <input type="file" id="file-att" accept=".jpg,.jpeg,.png,.pdf" onchange="handleUpload(this,'chip-att','att')">
+        <div class="chip-icon green"><i class="fa-solid fa-shield-check"></i></div>
+        <div class="chip-meta"><div class="chip-label">Attestation assurance</div><div class="chip-sub">Précédente</div></div>
+        <span class="chip-status pending" id="status-att"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
+        <div class="chip-progress" id="prog-att"></div>
+      </div>
+
+      <div class="upload-chip" id="chip-facture" onclick="triggerUpload('file-facture')">
+        <input type="file" id="file-facture" accept=".jpg,.jpeg,.png,.pdf" onchange="handleUpload(this,'chip-facture','facture')">
+        <div class="chip-icon red"><i class="fa-solid fa-receipt"></i></div>
+        <div class="chip-meta"><div class="chip-label">Facture d'achat</div><div class="chip-sub">Acte de vente</div></div>
+        <span class="chip-status pending" id="status-facture"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
+        <div class="chip-progress" id="prog-facture"></div>
+      </div>
+
+    </div>
+    <span class="ai-badge"><i class="fa-solid fa-wand-magic-sparkles"></i> OCR automatique</span>
+  </div>
+
+  <!-- SUB TABS -->
+  <div class="sub-tabs">
+    <button class="sub-tab active" onclick="showSub('veh-docs',this)">Informations véhicule</button>
+    <button class="sub-tab" onclick="showSub('veh-hist',this)">Historique</button>
+    <button class="sub-tab" onclick="showSub('veh-contrat',this)">Affectation contrat</button>
+    <button class="sub-tab" onclick="showSub('veh-statut',this)">Statut assurance</button>
+    <button class="sub-tab" onclick="showSub('veh-flotte',this)">Gestion flotte</button>
+  </div>
+
+  <!-- SUB: DOCS -->
+  <div class="sub-page active" id="sub-veh-docs">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+      <!-- CARTE GRISE -->
+      <div class="form-card">
+        <div class="form-card-header">
+          <div class="form-card-title"><i class="fa-solid fa-file-certificate" style="color:var(--accent)"></i> Carte grise
+            <span class="ai-badge" id="badge-cg" style="display:none"><i class="fa-solid fa-wand-magic-sparkles"></i> Extrait</span>
+          </div>
+          <button class="btn btn-sm" onclick="clearForm('cg-fields')"><i class="fa-solid fa-rotate-left"></i></button>
+        </div>
+        <div class="form-grid" id="cg-fields">
+          <div class="form-group"><label>N° Immatriculation *</label><input type="text" id="cg-immat" placeholder="—" style="font-family:var(--mono)" onchange="markModified(this)"></div>
+          <div class="form-group"><label>Marque</label><input type="text" id="cg-marque" placeholder="—" onchange="markModified(this)"></div>
+          <div class="form-group"><label>Modèle</label><input type="text" id="cg-modele" placeholder="—" onchange="markModified(this)"></div>
+          <div class="form-group"><label>Type véhicule</label><select id="cg-type" onchange="markModified(this)"><option value="">—</option><option>VP - Tourisme</option><option>VUL</option><option>PL</option><option>Moto</option></select></div>
+          <div class="form-group full"><label>N° Châssis (VIN)</label><input type="text" id="cg-vin" placeholder="—" style="font-family:var(--mono)" onchange="markModified(this)"></div>
+          <div class="form-group"><label>Puissance fiscale (CV)</label><input type="number" id="cg-cv" placeholder="—" onchange="markModified(this)"></div>
+          <div class="form-group"><label>Énergie / Carburant</label><select id="cg-energie" onchange="markModified(this)"><option value="">—</option><option>Essence</option><option>Diesel</option><option>Électrique</option><option>Hybride</option><option>GPL</option></select></div>
+          <div class="form-group"><label>1ère mise en circulation</label><input type="date" id="cg-mec" onchange="markModified(this)"></div>
+          <div class="form-group"><label>PTAC (kg)</label><input type="number" id="cg-ptac" placeholder="—" onchange="markModified(this)"></div>
+          <div class="form-group"><label>Nb de places</label><input type="number" id="cg-places" placeholder="—" onchange="markModified(this)"></div>
+          <div class="form-group"><label>Couleur</label><input type="text" id="cg-couleur" placeholder="—" onchange="markModified(this)"></div>
+          <div class="form-group"><label>Genre</label><select id="cg-genre" onchange="markModified(this)"><option value="">—</option><option>VP</option><option>VU</option><option>CTTE</option><option>TCP</option></select></div>
+          <div class="form-group half"><label>Propriétaire</label><input type="text" id="cg-proprio" placeholder="—" onchange="markModified(this)"></div>
+          <div class="form-group full"><label>Adresse propriétaire</label><input type="text" id="cg-adresse" placeholder="—" onchange="markModified(this)"></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <!-- PERMIS -->
+        <div class="form-card">
+          <div class="form-card-header">
+            <div class="form-card-title"><i class="fa-solid fa-id-card" style="color:var(--accent2)"></i> Permis de conduire
+              <span class="ai-badge" id="badge-permis" style="display:none"><i class="fa-solid fa-wand-magic-sparkles"></i> Extrait</span>
+            </div>
+            <button class="btn btn-sm" onclick="clearForm('permis-fields')"><i class="fa-solid fa-rotate-left"></i></button>
+          </div>
+          <div class="form-grid" id="permis-fields">
+            <div class="form-group"><label>Nom / Prénom conducteur</label><input type="text" id="p-nom" placeholder="—" onchange="markModified(this)"></div>
+            <div class="form-group"><label>N° Permis</label><input type="text" id="p-num" placeholder="—" style="font-family:var(--mono)" onchange="markModified(this)"></div>
+            <div class="form-group"><label>Catégories</label><input type="text" id="p-cat" placeholder="B, BE, C…" onchange="markModified(this)"></div>
+            <div class="form-group"><label>Autorité délivrance</label><input type="text" id="p-autorite" placeholder="—" onchange="markModified(this)"></div>
+            <div class="form-group"><label>Date délivrance</label><input type="date" id="p-delivrance" onchange="markModified(this)"></div>
+            <div class="form-group"><label>Date expiration</label><input type="date" id="p-expiration" onchange="markModified(this)"></div>
+          </div>
+        </div>
+
+        <!-- CONTRÔLE TECHNIQUE -->
+        <div class="form-card">
+          <div class="form-card-header">
+            <div class="form-card-title"><i class="fa-solid fa-wrench" style="color:var(--warning)"></i> Contrôle technique
+              <span class="ai-badge" id="badge-ct" style="display:none"><i class="fa-solid fa-wand-magic-sparkles"></i> Extrait</span>
+            </div>
+            <button class="btn btn-sm" onclick="clearForm('ct-fields')"><i class="fa-solid fa-rotate-left"></i></button>
+          </div>
+          <div class="form-grid" id="ct-fields">
+            <div class="form-group"><label>Date de visite</label><input type="date" id="ct-date" onchange="markModified(this)"></div>
+            <div class="form-group"><label>Résultat</label><select id="ct-result" onchange="markModified(this)"><option value="">—</option><option>Favorable</option><option>Défavorable</option><option>Contre-visite requise</option></select></div>
+            <div class="form-group"><label>Date expiration CT</label><input type="date" id="ct-expiration" onchange="markModified(this)"></div>
+            <div class="form-group"><label>Kilométrage</label><input type="number" id="ct-km" placeholder="—" onchange="markModified(this)"></div>
+            <div class="form-group full"><label>Anomalies éventuelles</label><textarea id="ct-anomalies" placeholder="Aucune / Description…" onchange="markModified(this)" style="min-height:60px"></textarea></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ATTESTATION + FACTURE -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:0">
+      <div class="form-card">
+        <div class="form-card-header">
+          <div class="form-card-title"><i class="fa-solid fa-shield-check" style="color:var(--success)"></i> Attestation assurance précédente
+            <span class="ai-badge" id="badge-att" style="display:none"><i class="fa-solid fa-wand-magic-sparkles"></i> Extrait</span>
+          </div>
+          <button class="btn btn-sm" onclick="clearForm('att-fields')"><i class="fa-solid fa-rotate-left"></i></button>
+        </div>
+        <div class="form-grid" id="att-fields">
+          <div class="form-group"><label>Ancien assureur</label><input type="text" id="att-assureur" placeholder="—" onchange="markModified(this)"></div>
+          <div class="form-group"><label>N° Contrat</label><input type="text" id="att-contrat" placeholder="—" style="font-family:var(--mono)" onchange="markModified(this)"></div>
+          <div class="form-group"><label>Début couverture</label><input type="date" id="att-debut" onchange="markModified(this)"></div>
+          <div class="form-group"><label>Fin couverture</label><input type="date" id="att-fin" onchange="markModified(this)"></div>
+          <div class="form-group"><label>Bonus / Malus</label><input type="text" id="att-bm" placeholder="Ex: Bonus 15%" onchange="markModified(this)"></div>
+          <div class="form-group"><label>Historique sinistres</label><input type="text" id="att-sinistres" placeholder="0 sinistre" onchange="markModified(this)"></div>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <div class="form-card-header">
+          <div class="form-card-title"><i class="fa-solid fa-receipt" style="color:var(--danger)"></i> Facture d'achat / Acte de vente
+            <span class="ai-badge" id="badge-facture" style="display:none"><i class="fa-solid fa-wand-magic-sparkles"></i> Extrait</span>
+          </div>
+          <button class="btn btn-sm" onclick="clearForm('facture-fields')"><i class="fa-solid fa-rotate-left"></i></button>
+        </div>
+        <div class="form-grid" id="facture-fields">
+          <div class="form-group"><label>Propriétaire</label><input type="text" id="fac-proprio" placeholder="—" onchange="markModified(this)"></div>
+          <div class="form-group"><label>Prix d'achat (MAD)</label><input type="number" id="fac-prix" placeholder="—" onchange="markModified(this)"></div>
+          <div class="form-group"><label>Date d'achat</label><input type="date" id="fac-date" onchange="markModified(this)"></div>
+          <div class="form-group"><label>Vendeur</label><input type="text" id="fac-vendeur" placeholder="—" onchange="markModified(this)"></div>
+          <div class="form-group full"><label>Véhicule concerné</label><input type="text" id="fac-veh" placeholder="Marque Modèle — Immatriculation" onchange="markModified(this)"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:4px">
+      <button class="btn"><i class="fa-solid fa-xmark"></i> Annuler</button>
+      <button class="btn btn-primary" onclick="saveForm('vehicule')"><i class="fa-solid fa-floppy-disk"></i> Enregistrer le véhicule</button>
+    </div>
+  </div>
+
+  <!-- SUB: HISTORIQUE -->
+  <div class="sub-page" id="sub-veh-hist">
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Date</th><th>Événement</th><th>Véhicule</th><th>Détails</th><th>Statut</th></tr></thead>
+        <tbody>
+          <tr><td>03/01/2025</td><td>Contrôle technique</td><td>12345-A-1 Clio V</td><td>CT favorable · 47 230 km</td><td><span class="badge badge-ok">Favorable</span></td></tr>
+          <tr><td>01/02/2024</td><td>Renouvellement assurance</td><td>12345-A-1 Clio V</td><td>Contrat WA-2024-001234</td><td><span class="badge badge-ok">Actif</span></td></tr>
+          <tr><td>15/09/2023</td><td>Entretien garage</td><td>12345-A-1 Clio V</td><td>Vidange + filtres</td><td><span class="badge badge-info">Effectué</span></td></tr>
+          <tr><td>20/06/2021</td><td>Achat véhicule</td><td>12345-A-1 Clio V</td><td>Auto Maroc — 185 000 MAD</td><td><span class="badge badge-info">Enregistré</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SUB: CONTRAT -->
+  <div class="sub-page" id="sub-veh-contrat">
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:16px">
+      <div class="form-card">
+        <div class="form-card-header"><div class="form-card-title"><i class="fa-solid fa-link" style="color:var(--accent)"></i> Affectation au contrat</div></div>
+        <div class="form-grid">
+          <div class="form-group"><label>Véhicule</label><select onchange="markModified(this)"><option>12345-A-1 — Renault Clio V</option><option>67890-B-2 — Dacia Logan</option></select></div>
+          <div class="form-group"><label>N° Contrat</label><input type="text" placeholder="POL-2025-XXXX" style="font-family:var(--mono)" onchange="markModified(this)"></div>
+          <div class="form-group"><label>Type couverture</label><select onchange="markModified(this)"><option>Tous risques</option><option>Tiers simple</option><option>Tiers étendu</option></select></div>
+          <div class="form-group"><label>Date d'effet</label><input type="date" onchange="markModified(this)"></div>
+          <div class="form-group"><label>Date d'échéance</label><input type="date" onchange="markModified(this)"></div>
+          <div class="form-group"><label>Prime annuelle (MAD)</label><input type="number" placeholder="—" onchange="markModified(this)"></div>
+        </div>
+        <div class="divider"></div>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button class="btn btn-primary" onclick="saveForm('contrat')"><i class="fa-solid fa-link"></i> Affecter au contrat</button>
+        </div>
+      </div>
+      <div class="form-card">
+        <div class="form-card-header"><div class="form-card-title"><i class="fa-solid fa-circle-info" style="color:var(--accent2)"></i> Résumé</div></div>
+        <div class="doc-list">
+          <div class="doc-item"><span class="doc-item-icon" style="color:var(--success)"><i class="fa-solid fa-check-circle"></i></span><span class="doc-item-name">Carte grise</span><span class="badge badge-ok doc-item-status">OK</span></div>
+          <div class="doc-item"><span class="doc-item-icon" style="color:var(--success)"><i class="fa-solid fa-check-circle"></i></span><span class="doc-item-name">Permis de conduire</span><span class="badge badge-ok doc-item-status">OK</span></div>
+          <div class="doc-item"><span class="doc-item-icon" style="color:var(--warning)"><i class="fa-solid fa-clock"></i></span><span class="doc-item-name">Contrôle technique</span><span class="badge badge-warn doc-item-status">Expire 03/01/26</span></div>
+          <div class="doc-item"><span class="doc-item-icon" style="color:var(--success)"><i class="fa-solid fa-check-circle"></i></span><span class="doc-item-name">Attestation précédente</span><span class="badge badge-ok doc-item-status">OK</span></div>
+        </div>
+        <div class="divider"></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span style="color:var(--text3)">Prime estimée</span><span style="font-weight:600;color:var(--accent)">2 450 MAD/an</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text3)">Bonus/Malus</span><span style="color:var(--success);font-weight:500">+15%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUB: STATUT -->
+  <div class="sub-page" id="sub-veh-statut">
+    <div class="stats-row" style="margin-bottom:16px">
+      <div class="stat-card green"><div class="stat-num">289</div><div class="stat-lbl">Véhicules assurés</div></div>
+      <div class="stat-card warn"><div class="stat-num">18</div><div class="stat-lbl">Expirent ce mois</div></div>
+      <div class="stat-card red"><div class="stat-num">5</div><div class="stat-lbl">Non assurés</div></div>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Véhicule</th><th>Contrat</th><th>Couverture</th><th>Échéance</th><th>Statut</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td><b>12345-A-1</b> Clio V</td><td style="font-family:var(--mono);font-size:12px">WA-2024-001</td><td>Tous risques</td><td>01/02/2026</td><td><span class="badge badge-ok">Actif</span></td><td><button class="btn btn-sm"><i class="fa-solid fa-eye"></i></button></td></tr>
+          <tr><td><b>67890-B-2</b> Logan</td><td style="font-family:var(--mono);font-size:12px">RMA-2025-02</td><td>Tiers étendu</td><td>15/03/2025</td><td><span class="badge badge-warn">Expire bientôt</span></td><td><button class="btn btn-sm btn-primary">Renouveler</button></td></tr>
+          <tr><td><b>AB-234-CD</b> 308</td><td style="font-family:var(--mono);font-size:12px">—</td><td>—</td><td>—</td><td><span class="badge badge-bad">Non assuré</span></td><td><button class="btn btn-sm btn-success">Assurer</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SUB: FLOTTE -->
+  <div class="sub-page" id="sub-veh-flotte">
+    <div class="section-head"><h2>Flotte — Trans Maroc SARL</h2><button class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Ajouter véhicule</button></div>
+    <div class="stats-row" style="margin-bottom:16px">
+      <div class="stat-card accent"><div class="stat-num">12</div><div class="stat-lbl">Véhicules flotte</div></div>
+      <div class="stat-card green"><div class="stat-num">11</div><div class="stat-lbl">Assurés</div></div>
+      <div class="stat-card red"><div class="stat-num">1</div><div class="stat-lbl">CT expiré</div></div>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Immatriculation</th><th>Modèle</th><th>Conducteur</th><th>Assurance</th><th>CT</th><th>Actions</th></tr></thead>
+        <tbody>
+          <tr><td style="font-family:var(--mono)">12345-A-1</td><td>Renault Clio V</td><td>Dupont J.</td><td><span class="badge badge-ok">Actif</span></td><td><span class="badge badge-ok">Valide</span></td><td><button class="btn btn-sm"><i class="fa-solid fa-pen"></i></button></td></tr>
+          <tr><td style="font-family:var(--mono)">AB-234-CD</td><td>Peugeot 308</td><td>Amrani S.</td><td><span class="badge badge-ok">Actif</span></td><td><span class="badge badge-bad">Expiré</span></td><td><button class="btn btn-sm"><i class="fa-solid fa-pen"></i></button></td></tr>
+          <tr><td style="font-family:var(--mono)">XY-789-ZA</td><td>Dacia Duster</td><td><span style="color:var(--text3)">Non affecté</span></td><td><span class="badge badge-warn">En cours</span></td><td><span class="badge badge-ok">Valide</span></td><td><button class="btn btn-sm"><i class="fa-solid fa-pen"></i></button></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================== -->
+<!-- PAGE : SINISTRES                                       -->
+<!-- ===================================================== -->
+<div class="page" id="page-sinistres">
+
+  <!-- UPLOAD STRIP -->
+  <div class="upload-strip">
+    <span class="upload-strip-title"><i class="fa-solid fa-cloud-arrow-up" style="margin-right:5px"></i>Pièces sinistre</span>
+    <div class="upload-strip-docs">
+
+      <div class="upload-chip" id="chip-constat" onclick="triggerUpload('file-constat')">
+        <input type="file" id="file-constat" accept=".jpg,.jpeg,.png,.pdf" onchange="handleUpload(this,'chip-constat','constat')">
+        <div class="chip-icon blue"><i class="fa-solid fa-pen-to-square"></i></div>
+        <div class="chip-meta"><div class="chip-label">Constat amiable</div><div class="chip-sub">PDF, scan</div></div>
+        <span class="chip-status pending" id="status-constat"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
+        <div class="chip-progress" id="prog-constat"></div>
+      </div>
+
+      <div class="upload-chip" id="chip-photos" onclick="triggerUpload('file-photos')">
+        <input type="file" id="file-photos" accept=".jpg,.jpeg,.png" multiple onchange="handleUpload(this,'chip-photos','photos')">
+        <div class="chip-icon teal"><i class="fa-solid fa-camera"></i></div>
+        <div class="chip-meta"><div class="chip-label">Photos accident</div><div class="chip-sub">JPEG, PNG · multiple</div></div>
+        <span class="chip-status pending" id="status-photos"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
+        <div class="chip-progress" id="prog-photos"></div>
+      </div>
+
+      <div class="upload-chip" id="chip-pv" onclick="triggerUpload('file-pv')">
+        <input type="file" id="file-pv" accept=".jpg,.jpeg,.png,.pdf" onchange="handleUpload(this,'chip-pv','pv')">
+        <div class="chip-icon red"><i class="fa-solid fa-gavel"></i></div>
+        <div class="chip-meta"><div class="chip-label">Rapport police / PV</div><div class="chip-sub">PDF</div></div>
+        <span class="chip-status pending" id="status-pv"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
+        <div class="chip-progress" id="prog-pv"></div>
+      </div>
+
+      <div class="upload-chip" id="chip-devis" onclick="triggerUpload('file-devis')">
+        <input type="file" id="file-devis" accept=".jpg,.jpeg,.png,.pdf" onchange="handleUpload(this,'chip-devis','devis')">
+        <div class="chip-icon amber"><i class="fa-solid fa-file-invoice"></i></div>
+        <div class="chip-meta"><div class="chip-label">Devis réparation</div><div class="chip-sub">PDF</div></div>
+        <span class="chip-status pending" id="status-devis"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
+        <div class="chip-progress" id="prog-devis"></div>
+      </div>
+
+      <div class="upload-chip" id="chip-garage" onclick="triggerUpload('file-garage')">
+        <input type="file" id="file-garage" accept=".jpg,.jpeg,.png,.pdf" onchange="handleUpload(this,'chip-garage','garage')">
+        <div class="chip-icon green"><i class="fa-solid fa-receipt"></i></div>
+        <div class="chip-meta"><div class="chip-label">Facture garage</div><div class="chip-sub">PDF</div></div>
+        <span class="chip-status pending" id="status-garage"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
+        <div class="chip-progress" id="prog-garage"></div>
+      </div>
+
+    </div>
+    <span class="ai-badge"><i class="fa-solid fa-wand-magic-sparkles"></i> OCR automatique</span>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card red"><div class="stat-num">48</div><div class="stat-lbl">Sinistres ouverts</div></div>
+    <div class="stat-card warn"><div class="stat-num">12</div><div class="stat-lbl">En expertise</div></div>
+    <div class="stat-card accent"><div class="stat-num">234k</div><div class="stat-lbl">Coût total MAD</div></div>
+    <div class="stat-card green"><div class="stat-num">6</div><div class="stat-lbl">Clôturés ce mois</div></div>
+  </div>
+
+  <!-- PROGRESSION -->
+  <div class="form-card" style="margin-bottom:16px">
+    <div class="form-card-header">
+      <div class="form-card-title"><i class="fa-solid fa-route" style="color:var(--accent)"></i> Sinistre SIN-2025-0048 — Suivi dossier</div>
+      <span class="badge badge-info">En expertise</span>
+    </div>
+    <div class="progress-steps" style="padding:0 10px;padding-bottom:28px">
+      <div class="step done"><div class="step-dot"><i class="fa-solid fa-check" style="font-size:10px"></i></div><div class="step-line"></div><span class="step-label">Déclaration</span></div>
+      <div class="step done"><div class="step-dot"><i class="fa-solid fa-check" style="font-size:10px"></i></div><div class="step-line"></div><span class="step-label">Documents</span></div>
+      <div class="step active"><div class="step-dot">3</div><div class="step-line"></div><span class="step-label">Expertise</span></div>
+      <div class="step"><div class="step-dot">4</div><div class="step-line"></div><span class="step-label">Indemnisation</span></div>
+      <div class="step"><div class="step-dot" style="border-right:none">5</div><span class="step-label">Clôture</span></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+    <!-- CONSTAT -->
+    <div class="form-card">
+      <div class="form-card-header">
+        <div class="form-card-title"><i class="fa-solid fa-pen-to-square" style="color:var(--accent)"></i> Constat amiable
+          <span class="ai-badge" id="badge-constat" style="display:none"><i class="fa-solid fa-wand-magic-sparkles"></i> Extrait</span>
+        </div>
+        <button class="btn btn-sm" onclick="clearForm('constat-fields')"><i class="fa-solid fa-rotate-left"></i></button>
+      </div>
+      <div class="form-grid" id="constat-fields">
+        <div class="form-group"><label>Date de l'accident</label><input type="date" id="con-date" onchange="markModified(this)"></div>
+        <div class="form-group"><label>Heure</label><input type="time" id="con-heure" onchange="markModified(this)"></div>
+        <div class="form-group full"><label>Lieu de l'accident</label><input type="text" id="con-lieu" placeholder="—" onchange="markModified(this)"></div>
+        <div class="form-group"><label>Conducteur A</label><input type="text" id="con-condA" placeholder="Nom — Plaque" onchange="markModified(this)"></div>
+        <div class="form-group"><label>Conducteur B</label><input type="text" id="con-condB" placeholder="Nom — Plaque" onchange="markModified(this)"></div>
+        <div class="form-group"><label>Assureur A</label><input type="text" id="con-assA" placeholder="—" onchange="markModified(this)"></div>
+        <div class="form-group"><label>Assureur B</label><input type="text" id="con-assB" placeholder="—" onchange="markModified(this)"></div>
+        <div class="form-group full"><label>Description de l'accident</label><textarea id="con-desc" placeholder="—" onchange="markModified(this)"></textarea></div>
+        <div class="form-group"><label>Croquis inclus</label><select id="con-croquis" onchange="markModified(this)"><option value="">—</option><option>Oui</option><option>Non</option></select></div>
+      </div>
+    </div>
+
+    <!-- RAPPORT POLICE -->
+    <div class="form-card">
+      <div class="form-card-header">
+        <div class="form-card-title"><i class="fa-solid fa-gavel" style="color:var(--danger)"></i> Rapport de police / PV
+          <span class="ai-badge" id="badge-pv" style="display:none"><i class="fa-solid fa-wand-magic-sparkles"></i> Extrait</span>
+        </div>
+        <button class="btn btn-sm" onclick="clearForm('pv-fields')"><i class="fa-solid fa-rotate-left"></i></button>
+      </div>
+      <div class="form-grid" id="pv-fields">
+        <div class="form-group"><label>N° PV</label><input type="text" id="pv-num" placeholder="—" style="font-family:var(--mono)" onchange="markModified(this)"></div>
+        <div class="form-group"><label>Responsabilité</label><select id="pv-resp" onchange="markModified(this)"><option value="">—</option><option>Conducteur A (100%)</option><option>Conducteur B (100%)</option><option>Partagée (50/50)</option><option>À déterminer</option></select></div>
+        <div class="form-group"><label>Parties impliquées</label><input type="text" id="pv-parties" placeholder="Nb de personnes" onchange="markModified(this)"></div>
+        <div class="form-group full"><label>Infractions relevées</label><textarea id="pv-infractions" placeholder="—" onchange="markModified(this)" style="min-height:70px"></textarea></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- FACTURE GARAGE inline -->
+      <div class="form-card-header" style="border-bottom:none;padding-bottom:0;margin-bottom:12px">
+        <div class="form-card-title"><i class="fa-solid fa-receipt" style="color:var(--success)"></i> Facture garage
+          <span class="ai-badge" id="badge-garage" style="display:none"><i class="fa-solid fa-wand-magic-sparkles"></i> Extrait</span>
+        </div>
+        <button class="btn btn-sm" onclick="clearForm('garage-fields')"><i class="fa-solid fa-rotate-left"></i></button>
+      </div>
+      <div class="form-grid" id="garage-fields">
+        <div class="form-group"><label>Garage</label><input type="text" id="gar-nom" placeholder="—" onchange="markModified(this)"></div>
+        <div class="form-group"><label>Coût réparation HT (MAD)</label><input type="number" id="gar-ht" placeholder="—" onchange="calcTTC()"></div>
+        <div class="form-group"><label>TVA (%)</label><input type="number" id="gar-tva" value="20" placeholder="20" onchange="calcTTC()"></div>
+        <div class="form-group"><label>Total TTC (MAD)</label><input type="number" id="gar-ttc" placeholder="Auto-calculé" style="color:var(--accent)" readonly></div>
+        <div class="form-group full"><label>Pièces changées</label><textarea id="gar-pieces" placeholder="—" onchange="markModified(this)" style="min-height:60px"></textarea></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LISTE SINISTRES -->
+  <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;margin-top:0">
+    <div class="form-card" style="padding:0;overflow:hidden">
+      <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:13px;font-weight:600">Sinistres en cours</span>
+        <button class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Déclarer</button>
+      </div>
+      <table>
+        <thead><tr><th>Réf.</th><th>Assuré</th><th>Véhicule</th><th>Date</th><th>Coût</th><th>Statut</th></tr></thead>
+        <tbody>
+          <tr class="selected"><td style="font-family:var(--mono);font-size:12px"><b>SIN-2025-0048</b></td><td>Dupont J-M.</td><td>Clio V</td><td>08/01/25</td><td>5 040</td><td><span class="badge badge-info">Expertise</span></td></tr>
+          <tr><td style="font-family:var(--mono);font-size:12px">SIN-2025-0039</td><td>Amrani S.</td><td>Logan</td><td>02/01/25</td><td>—</td><td><span class="badge badge-warn">En attente</span></td></tr>
+          <tr><td style="font-family:var(--mono);font-size:12px">SIN-2024-0187</td><td>Bennani K.</td><td>Duster</td><td>18/12/24</td><td>12 800</td><td><span class="badge badge-ok">Clôturé</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="form-card">
+      <div class="form-card-header"><div class="form-card-title"><i class="fa-solid fa-clipboard-list" style="color:var(--accent)"></i> Documents reçus</div></div>
+      <div class="doc-list" id="sin-doc-list">
+        <div class="doc-item"><span class="doc-item-icon" style="color:var(--text3)"><i class="fa-regular fa-circle"></i></span><span class="doc-item-name">Constat amiable</span><span class="badge badge-neutral doc-item-status" id="docst-constat">En attente</span></div>
+        <div class="doc-item"><span class="doc-item-icon" style="color:var(--text3)"><i class="fa-regular fa-circle"></i></span><span class="doc-item-name">Photos accident</span><span class="badge badge-neutral doc-item-status" id="docst-photos">En attente</span></div>
+        <div class="doc-item"><span class="doc-item-icon" style="color:var(--text3)"><i class="fa-regular fa-circle"></i></span><span class="doc-item-name">Rapport police</span><span class="badge badge-neutral doc-item-status" id="docst-pv">En attente</span></div>
+        <div class="doc-item"><span class="doc-item-icon" style="color:var(--text3)"><i class="fa-regular fa-circle"></i></span><span class="doc-item-name">Devis réparation</span><span class="badge badge-neutral doc-item-status" id="docst-devis">En attente</span></div>
+        <div class="doc-item"><span class="doc-item-icon" style="color:var(--text3)"><i class="fa-regular fa-circle"></i></span><span class="doc-item-name">Facture garage</span><span class="badge badge-neutral doc-item-status" id="docst-garage">En attente</span></div>
+      </div>
+      <div class="divider"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-success btn-sm" onclick="saveForm('sinistre')"><i class="fa-solid fa-floppy-disk"></i> Enregistrer</button>
+        <button class="btn btn-sm"><i class="fa-solid fa-paper-plane"></i> Expert</button>
+        <button class="btn btn-danger btn-sm"><i class="fa-solid fa-xmark"></i> Clôturer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FLASH NOTIFICATION -->
+<div class="flash" id="flash"><i class="fa-solid fa-circle-check"></i><span id="flash-msg">Action effectuée</span></div>
 
 <script>
-const API = '/api/v1';
-const DOC_SCOPE = { cin:'client', domicile:'client', cg:'vehicle', permis:'vehicle', ct:'vehicle', att:'vehicle', constat:'claim', photos:'claim', pv:'claim', garage:'claim' };
-const DOC_TYPE = { photos:'accidents', garage:'repair_invoice' };
-const state = {
-  clients: [], vehicles: [], claims: [], documents: [],
-  activeClientId: Number(localStorage.getItem('assurauto_client_id')) || null,
-  activeVehicleId: Number(localStorage.getItem('assurauto_vehicle_id')) || null,
-  activeClaimId: Number(localStorage.getItem('assurauto_claim_id')) || null,
-  pendingDocs: JSON.parse(sessionStorage.getItem('assurauto_pending_docs') || '[]'),
-  ocr: JSON.parse(sessionStorage.getItem('assurauto_ocr_cache') || '{}'),
-  tab: 'client',
+/* ===== NAVIGATION ===== */
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  el.classList.add('active');
+}
+
+function showSub(name, el) {
+  const page = el.closest('.page');
+  page.querySelectorAll('.sub-page').forEach(s => s.classList.remove('active'));
+  page.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('sub-' + name).classList.add('active');
+  el.classList.add('active');
+}
+
+/* ===== UPLOAD HANDLING ===== */
+function triggerUpload(id) {
+  // prevent double-trigger from chip click
+}
+
+function handleUpload(input, chipId, docType) {
+  if (!input.files || !input.files[0]) return;
+  const chip = document.getElementById(chipId);
+  const status = document.getElementById('status-' + docType);
+  const filename = input.files.length > 1 ? input.files.length + ' fichiers' : input.files[0].name;
+
+  // Set uploading state
+  chip.classList.add('uploading');
+  chip.classList.remove('uploaded');
+  if (status) { status.className = 'chip-status loading'; status.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; }
+  chip.querySelector('.chip-sub').textContent = filename;
+
+  // Simulate OCR processing (replace with real API call)
+  showFlash('Analyse OCR en cours pour ' + filename + '…', 'info');
+
+  setTimeout(() => {
+    chip.classList.remove('uploading');
+    chip.classList.add('uploaded');
+    if (status) { status.className = 'chip-status ok'; status.innerHTML = '<i class="fa-solid fa-check"></i>'; }
+
+    // Auto-fill form with extracted data
+    autoFill(docType);
+
+    // Update sinistre doc list if applicable
+    const docListBadge = document.getElementById('docst-' + docType);
+    if (docListBadge) {
+      docListBadge.className = 'badge badge-ok doc-item-status';
+      docListBadge.textContent = 'Reçu';
+      const icon = docListBadge.parentElement.querySelector('.doc-item-icon');
+      if (icon) { icon.style.color = 'var(--success)'; icon.innerHTML = '<i class="fa-solid fa-check-circle"></i>'; }
+    }
+
+    showFlash('OCR terminé · Formulaire rempli automatiquement', 'ok');
+  }, 2200);
+}
+
+/* ===== AUTO-FILL (simulated OCR response) ===== */
+const ocrData = {
+  cin: {
+    'cin-nom': 'DUPONT', 'cin-prenom': 'Jean-Michel', 'cin-numero': 'BE123456',
+    'cin-naissance': '1985-03-14', 'cin-sexe': 'Masculin', 'cin-expiration': '2025-02-28',
+    'cin-adresse': '12 rue des Oliviers', 'cin-ville': 'Casablanca'
+  },
+  domicile: {
+    'dom-adresse': '12 rue des Oliviers, Casablanca', 'dom-type': 'Facture électricité',
+    'dom-emetteur': 'ONEE', 'dom-date': '2025-01'
+  },
+  cg: {
+    'cg-immat': '12345-A-1', 'cg-marque': 'Renault', 'cg-modele': 'Clio V',
+    'cg-type': 'VP - Tourisme', 'cg-vin': 'VF15RBF0A63482791', 'cg-cv': '7',
+    'cg-energie': 'Essence', 'cg-mec': '2021-06-15', 'cg-ptac': '1650',
+    'cg-places': '5', 'cg-couleur': 'Gris platine', 'cg-genre': 'VP',
+    'cg-proprio': 'DUPONT Jean-Michel', 'cg-adresse': '12 rue des Oliviers, Casablanca'
+  },
+  permis: {
+    'p-nom': 'DUPONT Jean-Michel', 'p-num': 'MA-2012-789456', 'p-cat': 'B, BE',
+    'p-autorite': 'Préfecture Casablanca', 'p-delivrance': '2012-07-12', 'p-expiration': '2027-07-12'
+  },
+  ct: {
+    'ct-date': '2025-01-03', 'ct-result': 'Favorable', 'ct-expiration': '2026-01-03',
+    'ct-km': '47230', 'ct-anomalies': 'Aucune anomalie relevée'
+  },
+  att: {
+    'att-assureur': 'Wafa Assurance', 'att-contrat': 'WA-2024-001234',
+    'att-debut': '2024-02-01', 'att-fin': '2025-02-01',
+    'att-bm': 'Bonus 15%', 'att-sinistres': '0 sinistre'
+  },
+  facture: {
+    'fac-proprio': 'DUPONT Jean-Michel', 'fac-prix': '185000',
+    'fac-date': '2021-06-20', 'fac-vendeur': 'Auto Maroc Concessionnaire',
+    'fac-veh': 'Renault Clio V — 12345-A-1'
+  },
+  constat: {
+    'con-date': '2025-01-08', 'con-heure': '14:32',
+    'con-lieu': 'Bd Zerktouni, Casablanca — Carrefour Maarif',
+    'con-condA': 'Dupont J-M. — 12345-A-1', 'con-condB': 'Alami H. — AB-234-CD',
+    'con-assA': 'Wafa Assurance', 'con-assB': 'RMA',
+    'con-desc': 'Accrochage latéral au carrefour. Le véhicule A n\'a pas respecté la priorité à droite.',
+    'con-croquis': 'Oui'
+  },
+  pv: {
+    'pv-num': 'PV-2025-00891', 'pv-resp': 'Partagée (50/50)',
+    'pv-parties': '2 conducteurs, 0 blessé',
+    'pv-infractions': 'Non-respect de la priorité (article 49 du Code de la route)'
+  },
+  garage: {
+    'gar-nom': 'Auto Service Ain Sebaâ', 'gar-ht': '4200',
+    'gar-tva': '20', 'gar-ttc': '5040',
+    'gar-pieces': 'Pare-choc arrière, Feu arrière gauche, Carénage latéral'
+  }
 };
 
-function $(id){return document.getElementById(id)}
-function esc(v){return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function showFlash(text, kind='info'){const f=$('flash');$('flashText').textContent=text;f.className='flash show '+kind;clearTimeout(f.t);f.t=setTimeout(()=>f.classList.remove('show'),3200)}
-async function api(path, options={}){
-  const response = await fetch(API + path, { headers: options.body instanceof FormData ? undefined : {'Content-Type':'application/json'}, ...options });
-  if(!response.ok){const error=await response.json().catch(()=>({}));throw new Error(error.detail || 'Erreur API '+response.status)}
-  return response.status === 204 ? null : response.json();
-}
-function setTab(name){
-  state.tab=name;
-  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
-  document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active', s.id==='tab-'+name));
-}
-function saveLocal(){
-  if(state.activeClientId) localStorage.setItem('assurauto_client_id', state.activeClientId); else localStorage.removeItem('assurauto_client_id');
-  if(state.activeVehicleId) localStorage.setItem('assurauto_vehicle_id', state.activeVehicleId); else localStorage.removeItem('assurauto_vehicle_id');
-  if(state.activeClaimId) localStorage.setItem('assurauto_claim_id', state.activeClaimId); else localStorage.removeItem('assurauto_claim_id');
-  sessionStorage.setItem('assurauto_pending_docs', JSON.stringify(state.pendingDocs));
-  sessionStorage.setItem('assurauto_ocr_cache', JSON.stringify(state.ocr));
-}
-function activeClient(){return state.clients.find(c=>c.id===state.activeClientId)||null}
-function activeVehicle(){return state.vehicles.find(v=>v.id===state.activeVehicleId)||null}
-function activeClaim(){return state.claims.find(c=>c.id===state.activeClaimId)||null}
-function vehiclesOf(clientId){return state.vehicles.filter(v=>v.client_id===clientId)}
-function claimsOf(vehicleId){return state.claims.filter(c=>c.vehicle_id===vehicleId)}
-
-async function refresh(){
-  try{
-    const [clients, vehicles, claims, documents] = await Promise.all([api('/clients'), api('/vehicles'), api('/claims'), api('/documents')]);
-    Object.assign(state,{clients,vehicles,claims,documents});
-    if(state.activeClientId && !activeClient()) state.activeClientId = clients[0]?.id || null;
-    if(state.activeVehicleId && !activeVehicle()) state.activeVehicleId = vehiclesOf(state.activeClientId)[0]?.id || null;
-    if(state.activeClaimId && !activeClaim()) state.activeClaimId = claimsOf(state.activeVehicleId)[0]?.id || null;
-    saveLocal(); renderAll();
-  }catch(err){showFlash(err.message,'err')}
-}
-
-function renderAll(){renderTree();renderStats();renderForms();renderDocs();renderPath();renderOcr();updateButtons()}
-function renderStats(){
-  $('statClients').textContent=state.clients.length;
-  $('statVehicles').textContent=state.vehicles.length;
-  $('statClaims').textContent=state.claims.length;
-}
-function renderTree(){
-  const q = $('searchInput').value.trim().toLowerCase();
-  const filtered = state.clients.filter(c => {
-    const text = [c.full_name,c.cin_number,c.email,c.phone,...vehiclesOf(c.id).map(v=>v.registration_number)].join(' ').toLowerCase();
-    return !q || text.includes(q);
+function autoFill(docType) {
+  const data = ocrData[docType];
+  if (!data) return;
+  Object.entries(data).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.tagName === 'SELECT') {
+      for (let o of el.options) { if (o.value === val || o.text === val) { el.value = o.value; break; } }
+    } else {
+      el.value = val;
+    }
+    el.classList.add('auto-filled');
+    el.classList.remove('modified');
   });
-  if(!filtered.length){$('tree').innerHTML='<div class="tree-empty">Aucun dossier dans PostgreSQL.</div>';return}
-  $('tree').innerHTML = filtered.map(client => {
-    const vehicles = vehiclesOf(client.id);
-    return `<div class="node">
-      <button class="node-main ${client.id===state.activeClientId?'active':''}" data-pick-client="${client.id}">
-        <span class="node-icon"><i class="fa-solid fa-user"></i></span>
-        <span><span class="node-label">${esc(client.full_name)}</span><span class="node-sub">${esc(client.cin_number||'Sans CIN')} · ${vehicles.length} vehicule(s)</span></span>
-      </button>
-      <div class="children">
-        ${vehicles.map(v => `<button class="child ${v.id===state.activeVehicleId?'active':''}" data-pick-vehicle="${v.id}">
-          <i class="fa-solid fa-car muted"></i><span><b>${esc(v.registration_number||'Vehicule sans plaque')}</b><br><span class="muted">${esc([v.make,v.model].filter(Boolean).join(' ')||'Modele non renseigne')}</span></span>
-        </button>
-        ${claimsOf(v.id).map(c => `<button class="child claim ${c.id===state.activeClaimId?'active':''}" data-pick-claim="${c.id}">
-          <i class="fa-solid fa-file-medical muted"></i><span><b>${esc(c.claim_number)}</b><br><span class="muted">${esc(c.accident_date||'Date inconnue')} · ${esc(c.status)}</span></span>
-        </button>`).join('')}`).join('') || '<div class="muted" style="padding:4px 8px">Aucun vehicule</div>'}
-      </div>
-    </div>`;
-  }).join('');
+
+  // Show AI badge
+  const badge = document.getElementById('badge-' + docType);
+  if (badge) badge.style.display = 'inline-flex';
+
+  // Update completude badge
+  updateCompletude(docType);
+
+  // Special: recalc TTC
+  if (docType === 'garage') calcTTC();
 }
 
-function renderPath(){
-  const c=activeClient(), v=activeVehicle(), s=activeClaim();
-  $('activePath').innerHTML = c ? `
-    <b>${esc(c.full_name)}</b><br>
-    <span class="muted">Client #${c.id}</span>
-    ${v ? `<br><br><b>Vehicule:</b> ${esc(v.registration_number||'#'+v.id)}<br><span class="muted">${esc([v.make,v.model].filter(Boolean).join(' '))}</span>` : '<br><br><span class="muted">Aucun vehicule selectionne.</span>'}
-    ${s ? `<br><br><b>Sinistre:</b> ${esc(s.claim_number)}<br><span class="badge info">${esc(s.status)}</span>` : ''}
-  ` : 'Aucun client selectionne.';
+function updateCompletude(docType) {
+  const map = { cin: 'cin-completude', domicile: 'dom-completude' };
+  const el = document.getElementById(map[docType]);
+  if (el) { el.className = 'badge badge-ok'; el.textContent = '✓ Complet'; }
 }
 
-function renderForms(){
-  const c=activeClient(), v=activeVehicle(), s=activeClaim();
-  const nameParts = splitClientName(c?.full_name || '');
-  $('cinNom').value=nameParts.nom;$('cinPrenom').value=nameParts.prenom;$('cinNumero').value=c?.cin_number||'';
-  $('cinNaissance').value=c?.metadata?.birth_date||'';$('cinSexe').value=c?.metadata?.sex||'';$('cinExpiration').value=c?.metadata?.cin_expiration||'';
-  $('cinAdresse').value=c?.metadata?.cin_address||c?.address||'';$('cinVille').value=c?.metadata?.city||'';
-  $('domAdresse').value=c?.metadata?.domicile_address||c?.address||'';$('domType').value=c?.metadata?.domicile_type||'';$('domEmetteur').value=c?.metadata?.domicile_issuer||'';$('domDate').value=c?.metadata?.domicile_date||'';
-  $('clientPhone').value=c?.phone||'';$('clientEmail').value=c?.email||'';$('clientProfession').value=c?.metadata?.profession||'';$('clientType').value=c?.client_type||'individual';
-  $('vehicleClientLabel').value=c ? `${c.full_name} (#${c.id})` : '';
-  $('vehicleReg').value=v?.registration_number||'';$('vehicleMake').value=v?.make||'';$('vehicleModel').value=v?.model||'';$('vehicleVin').value=v?.vin||'';
-  $('vehicleYear').value=v?.year||'';$('vehicleUsage').value=v?.usage||'';$('vehicleFuel').value=v?.metadata?.fuel_type||'';$('vehicleNotes').value=v?.metadata?.notes||'';
-  $('claimVehicleLabel').value=v ? `${v.registration_number||'Vehicule #'+v.id} - ${[v.make,v.model].filter(Boolean).join(' ')}` : '';
-  $('claimNumber').value=s?.claim_number||nextClaimNumber();$('claimDate').value=s?.accident_date||'';$('claimStatus').value=s?.status||'DECLARED';
-  $('claimLocation').value=s?.location||'';$('claimCost').value=s?.estimated_cost||'';$('claimDamage').value=s?.damage_level||'';
-  $('claimGarage').value=s?.metadata?.garage_name||'';$('claimDescription').value=s?.description||'';
-  $('vehicleNotice').textContent=c ? `Vehicule rattache au client: ${c.full_name}` : "Selectionnez ou enregistrez un client avant d'ajouter un vehicule.";
-  $('claimNotice').textContent=v ? `Sinistre rattache au vehicule: ${v.registration_number||'#'+v.id}` : 'Selectionnez un vehicule pour declarer un sinistre.';
-}
-function renderDocs(){
-  const docs = state.documents.filter(d =>
-    (state.activeClaimId && d.sinistre_id===state.activeClaimId) ||
-    (!state.activeClaimId && state.activeVehicleId && d.vehicle_id===state.activeVehicleId) ||
-    (!state.activeClaimId && !state.activeVehicleId && state.activeClientId && d.client_id===state.activeClientId)
-  );
-  $('docList').innerHTML = docs.length ? docs.map(d=>`<div class="doc-row"><span><b>${esc(d.original_filename)}</b><br><span class="muted">${esc(d.document_type)} · #${d.id}</span></span><span class="badge ${d.processing_status==='COMPLETED'?'ok':d.processing_status==='FAILED'?'bad':'warn'}">${esc(d.processing_status)}</span></div>`).join('') : '<div class="tree-empty">Aucun document pour la selection active.</div>';
-}
-function renderOcr(){
-  $('ocrPreview').textContent = Object.keys(state.ocr).length ? JSON.stringify(state.ocr,null,2) : 'Aucun resultat OCR en cache.';
-}
-function updateButtons(){
-  const hasClient=!!activeClient(), hasVehicle=!!activeVehicle(), hasClaim=!!activeClaim();
-  $('deleteClientBtn').disabled=!hasClient;$('saveVehicleBtn').disabled=!hasClient;$('deleteVehicleBtn').disabled=!hasVehicle;$('openClaimBtn').disabled=!hasVehicle;
-  $('saveClaimBtn').disabled=!hasClient||!hasVehicle;$('deleteClaimBtn').disabled=!hasClaim;$('claimReviewBtn').disabled=!hasClaim;$('closeClaimBtn').disabled=!hasClaim;
+/* ===== MARK MODIFIED ===== */
+function markModified(input) {
+  if (input.classList.contains('auto-filled')) {
+    input.classList.add('modified');
+  }
 }
 
-function pickClient(id){state.activeClientId=id;state.activeVehicleId=vehiclesOf(id)[0]?.id||null;state.activeClaimId=state.activeVehicleId?claimsOf(state.activeVehicleId)[0]?.id||null:null;saveLocal();setTab('client');renderAll()}
-function pickVehicle(id){const v=state.vehicles.find(x=>x.id===id);if(!v)return;state.activeClientId=v.client_id;state.activeVehicleId=id;state.activeClaimId=claimsOf(id)[0]?.id||null;saveLocal();setTab('vehicle');renderAll()}
-function pickClaim(id){const s=state.claims.find(x=>x.id===id);if(!s)return;state.activeClientId=s.client_id;state.activeVehicleId=s.vehicle_id;state.activeClaimId=id;saveLocal();setTab('claim');renderAll()}
-function clearClient(){state.activeClientId=null;state.activeVehicleId=null;state.activeClaimId=null;saveLocal();renderForms();updateButtons();setTab('client')}
-function clearVehicle(){state.activeVehicleId=null;state.activeClaimId=null;saveLocal();renderForms();updateButtons();setTab('vehicle')}
-function clearClaim(){state.activeClaimId=null;saveLocal();renderForms();updateButtons();setTab('claim')}
-function nextClaimNumber(){return 'SIN-'+new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14)}
-function splitClientName(fullName){
-  const parts=String(fullName||'').trim().split(/\s+/).filter(Boolean);
-  return {nom:parts[0]||'', prenom:parts.slice(1).join(' ')};
+/* ===== CLEAR FORM ===== */
+function clearForm(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.querySelectorAll('input,select,textarea').forEach(el => {
+    if (el.type === 'checkbox') el.checked = false;
+    else el.value = '';
+    el.classList.remove('auto-filled', 'modified');
+  });
+  showFlash('Formulaire réinitialisé', 'ok');
 }
-function fullClientName(){return [$('cinNom').value.trim(), $('cinPrenom').value.trim()].filter(Boolean).join(' ')}
-function resetFields(containerId){document.querySelectorAll('#'+containerId+' input, #'+containerId+' select, #'+containerId+' textarea').forEach(el=>{el.value=''})}
-function validatedClientData(){
-  return {
-    scope:'client',
-    cin:{nom:$('cinNom').value.trim(),prenom:$('cinPrenom').value.trim(),cin_number:$('cinNumero').value.trim(),birth_date:$('cinNaissance').value||null,sex:$('cinSexe').value||null,expiration_date:$('cinExpiration').value||null,address:$('cinAdresse').value.trim(),city:$('cinVille').value.trim()},
-    domicile:{address:$('domAdresse').value.trim(),document_type:$('domType').value||null,issuer:$('domEmetteur').value.trim(),document_date:$('domDate').value||null},
-    extra:{phone:$('clientPhone').value.trim(),email:$('clientEmail').value.trim(),profession:$('clientProfession').value.trim(),client_type:$('clientType').value},
+
+/* ===== CALC TTC ===== */
+function calcTTC() {
+  const ht = parseFloat(document.getElementById('gar-ht')?.value) || 0;
+  const tva = parseFloat(document.getElementById('gar-tva')?.value) || 20;
+  const ttc = document.getElementById('gar-ttc');
+  if (ttc) ttc.value = (ht * (1 + tva/100)).toFixed(2);
+}
+
+/* ===== SAVE FORM ===== */
+function saveForm(type) {
+  const messages = {
+    client: 'Client enregistré avec succès',
+    vehicule: 'Véhicule enregistré avec succès',
+    contrat: 'Affectation au contrat effectuée',
+    sinistre: 'Sinistre mis à jour'
   };
-}
-function validatedVehicleData(){
-  return {scope:'vehicle',registration_number:$('vehicleReg').value.trim(),vin:$('vehicleVin').value.trim(),make:$('vehicleMake').value.trim(),model:$('vehicleModel').value.trim(),year:$('vehicleYear').value||null,usage:$('vehicleUsage').value||null,fuel_type:$('vehicleFuel').value.trim(),notes:$('vehicleNotes').value.trim()};
-}
-function validatedClaimData(){
-  return {scope:'claim',claim_number:$('claimNumber').value,accident_date:$('claimDate').value||null,status:$('claimStatus').value,location:$('claimLocation').value.trim(),estimated_cost:$('claimCost').value||null,damage_level:$('claimDamage').value.trim(),garage_name:$('claimGarage').value.trim(),description:$('claimDescription').value.trim()};
+  showFlash(messages[type] || 'Enregistré', 'ok');
+  // HERE: call your backend API
+  // fetch('/api/' + type, { method: 'POST', body: JSON.stringify(collectForm(type)) })
 }
 
-async function saveClient(){
-  const payload = {
-    full_name:fullClientName()||'Nouveau client',
-    cin_number:$('cinNumero').value.trim()||null,
-    phone:$('clientPhone').value.trim()||null,
-    email:$('clientEmail').value.trim()||null,
-    address:$('domAdresse').value.trim()||$('cinAdresse').value.trim()||null,
-    client_type:$('clientType').value,
-    metadata:{
-      birth_date:$('cinNaissance').value||null,
-      sex:$('cinSexe').value||null,
-      cin_expiration:$('cinExpiration').value||null,
-      cin_address:$('cinAdresse').value.trim()||null,
-      city:$('cinVille').value.trim()||null,
-      domicile_address:$('domAdresse').value.trim()||null,
-      domicile_type:$('domType').value||null,
-      domicile_issuer:$('domEmetteur').value.trim()||null,
-      domicile_date:$('domDate').value||null,
-      profession:$('clientProfession').value.trim()||null,
-      ocr_cache:state.ocr.client||state.ocr
-    }
-  };
-  const saved = await api(state.activeClientId?'/clients/'+state.activeClientId:'/clients',{method:state.activeClientId?'PATCH':'POST',body:JSON.stringify(payload)});
-  state.activeClientId=saved.id;await assignPending('client',{client_id:saved.id,validated_data:validatedClientData()});saveLocal();await refresh();setTab('vehicle');showFlash('Client enregistre. Vous pouvez ajouter ses vehicules.','ok');
-}
-async function saveVehicle(){
-  if(!state.activeClientId) throw new Error("Enregistrez d'abord le client.");
-  const payload = {client_id:state.activeClientId,registration_number:$('vehicleReg').value.trim()||null,vin:$('vehicleVin').value.trim()||null,make:$('vehicleMake').value.trim()||null,model:$('vehicleModel').value.trim()||null,year:$('vehicleYear').value?Number($('vehicleYear').value):null,usage:$('vehicleUsage').value||null,metadata:{fuel_type:$('vehicleFuel').value.trim()||null,notes:$('vehicleNotes').value.trim()||null,ocr_cache:state.ocr.vehicle||state.ocr}};
-  const saved = await api(state.activeVehicleId?'/vehicles/'+state.activeVehicleId:'/vehicles',{method:state.activeVehicleId?'PATCH':'POST',body:JSON.stringify(payload)});
-  state.activeVehicleId=saved.id;await assignPending('vehicle',{client_id:state.activeClientId,vehicle_id:saved.id,validated_data:validatedVehicleData()});saveLocal();await refresh();setTab('claim');showFlash('Vehicule enregistre. Vous pouvez declarer un sinistre.','ok');
-}
-async function saveClaim(){
-  if(!state.activeClientId||!state.activeVehicleId) throw new Error('Selectionnez un client et un vehicule.');
-  const existingId = state.activeClaimId;
-  const oldStatus = activeClaim()?.status;
-  const targetStatus = $('claimStatus').value;
-  const payload = {client_id:state.activeClientId,vehicle_id:state.activeVehicleId,claim_number:$('claimNumber').value||nextClaimNumber(),accident_date:$('claimDate').value||null,location:$('claimLocation').value.trim()||null,description:$('claimDescription').value.trim()||null,damage_level:$('claimDamage').value.trim()||null,estimated_cost:$('claimCost').value||null,metadata:{garage_name:$('claimGarage').value.trim()||null,ocr_cache:state.ocr.claim||state.ocr},status:targetStatus};
-  if(existingId) delete payload.status;
-  const saved = await api(existingId?'/claims/'+existingId:'/claims',{method:existingId?'PATCH':'POST',body:JSON.stringify(payload)});
-  if(existingId && oldStatus && targetStatus !== oldStatus) await api('/claims/'+saved.id+'/status',{method:'POST',body:JSON.stringify({to_status:targetStatus,reason:'Modification depuis formulaire'})});
-  state.activeClaimId=saved.id;await assignPending('claim',{client_id:state.activeClientId,vehicle_id:state.activeVehicleId,sinistre_id:saved.id,validated_data:validatedClaimData()});saveLocal();await refresh();setTab('claim');showFlash('Sinistre enregistre et lie au vehicule.','ok');
-}
-async function removeActive(kind){
-  if(kind==='client'&&state.activeClientId){await api('/clients/'+state.activeClientId,{method:'DELETE'});clearClient()}
-  if(kind==='vehicle'&&state.activeVehicleId){await api('/vehicles/'+state.activeVehicleId,{method:'DELETE'});clearVehicle()}
-  if(kind==='claim'&&state.activeClaimId){await api('/claims/'+state.activeClaimId,{method:'DELETE'});clearClaim()}
-  await refresh();showFlash('Suppression effectuee.','ok');
-}
-async function updateClaimStatus(status){
-  if(!state.activeClaimId) return;
-  await api('/claims/'+state.activeClaimId+'/status',{method:'POST',body:JSON.stringify({to_status:status,reason:'Action depuis interface'})});
-  await refresh();showFlash(status==='CLOSED'?'Sinistre cloture.':'Sinistre envoye en expertise.','ok');
+/* ===== FLASH ===== */
+function showFlash(msg, type='ok') {
+  const f = document.getElementById('flash');
+  const m = document.getElementById('flash-msg');
+  f.className = 'flash flash-' + type;
+  m.textContent = msg;
+  f.classList.add('show');
+  clearTimeout(f._t);
+  f._t = setTimeout(() => f.classList.remove('show'), 3200);
 }
 
-async function assignPending(scope, refs){
-  const docs = state.pendingDocs.filter(d=>d.scope===scope);
-  await Promise.all(docs.map(d=>api('/documents/'+d.id+'/assign-refs',{method:'POST',body:JSON.stringify(refs)}).catch(()=>null)));
-  state.pendingDocs = state.pendingDocs.filter(d=>d.scope!==scope);saveLocal();
-}
-async function uploadDocument(input){
-  const file=input.files?.[0]; if(!file) return;
-  const doc=input.dataset.doc, scope=DOC_SCOPE[doc]||'client';
-  if(scope==='claim') await ensureClaimForDocumentUpload();
-  const form=new FormData(); form.append('file',file); form.append('document_type',DOC_TYPE[doc]||doc);
-  if(state.activeClientId) form.append('client_id',state.activeClientId);
-  if(scope==='vehicle'&&state.activeVehicleId) form.append('vehicle_id',state.activeVehicleId);
-  if(scope==='claim'&&state.activeClaimId) form.append('sinistre_id',state.activeClaimId);
-  try{
-    showFlash('Upload en cours: '+file.name,'info');
-    const created=await api('/documents/upload',{method:'POST',body:form});
-    state.pendingDocs=state.pendingDocs.filter(d=>d.id!==created.id).concat({id:created.id,scope,document_type:created.document_type});
-    saveLocal();
-    if($('autoOcr').checked) pollAi(created.id, scope, doc);
-    await refresh();showFlash('Document uploade. Traitement OCR lance.','ok');
-  }catch(err){showFlash(err.message,'err')} finally{input.value=''}
-}
-async function ensureClaimForDocumentUpload(){
-  if(state.activeClaimId) return;
-  if(!state.activeClientId || !state.activeVehicleId) throw new Error("Selectionnez un client et un vehicule avant d'uploader une piece sinistre.");
-  const payload = {
-    client_id: state.activeClientId,
-    vehicle_id: state.activeVehicleId,
-    claim_number: nextClaimNumber(),
-    status: 'DECLARED',
-    metadata: { created_from_document_upload: true }
-  };
-  const created = await api('/claims', {method:'POST', body:JSON.stringify(payload)});
-  state.activeClaimId = created.id;
-  saveLocal();
-  await refresh();
-  setTab('claim');
-}
-async function pollAi(id, scope, docKey){
-  for(let i=0;i<18;i++){
-    await new Promise(r=>setTimeout(r,2500));
-    const doc=await api('/documents/'+id).catch(()=>null);
-    if(!doc || doc.processing_status==='PENDING' || doc.processing_status==='PROCESSING') continue;
-    if(doc.processing_status==='COMPLETED' && doc.ai_result){await refresh();setTab(scope==='vehicle'?'vehicle':scope==='claim'?'claim':'client');applyAi(doc.ai_result, scope, docKey);showFlash('OCR applique au formulaire.','ok')}
-    if(doc.processing_status==='FAILED') showFlash('OCR echoue: '+(doc.processing_error||'erreur inconnue'),'err');
-    break;
-  }
-}
-function rawValue(raw,...keys){
-  for(const key of keys){
-    if(!key)continue;
-    if(raw && raw[key] !== undefined && raw[key] !== null && String(raw[key]).trim() !== '') return raw[key];
-    const norm=key.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'');
-    for(const rk of Object.keys(raw||{})){
-      const rawKey = rk.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'');
-      if((rawKey.includes(norm) || norm.includes(rawKey)) && raw[rk]) return raw[rk];
-    }
-  }
-  return null;
-}
-function isoDate(value){
-  if(!value) return '';
-  const text=String(value).trim();
-  if(/^\d{4}-\d{2}-\d{2}/.test(text)) return text.slice(0,10);
-  const m=text.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
-  return m ? `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}` : '';
-}
-function splitAiName(name){
-  const parts=String(name||'').trim().split(/\s+/).filter(Boolean);
-  return {nom:parts[0]||'', prenom:parts.slice(1).join(' ')};
-}
-function applyAi(ai, scope, docKey){
-  const raw=ai.raw_fields||ai||{}; state.ocr[scope]=Object.assign(state.ocr[scope]||{}, {[docKey]: ai}); saveLocal();
-  if(scope==='client'){
-    const name=ai.name||rawValue(raw,'full_name','name','nom complet');
-    const nom=rawValue(raw,'nom','last_name','surname');
-    const prenom=rawValue(raw,'prenom','prénom','first_name','given_name');
-    if(nom)$('cinNom').value=nom; else if(name){const parts=splitAiName(name);$('cinNom').value=parts.nom;$('cinPrenom').value=parts.prenom}
-    if(prenom)$('cinPrenom').value=prenom;
-    const cin=ai.cin_number||rawValue(raw,'cin_number','n cin','n° cin','numero cin','numero','cin'); if(cin)$('cinNumero').value=cin;
-    const birth=isoDate(rawValue(raw,'date naissance','date de naissance','birth_date')); if(birth)$('cinNaissance').value=birth;
-    const expiry=isoDate(rawValue(raw,'date expiration','date d expiration','valid_until','expiration')); if(expiry)$('cinExpiration').value=expiry;
-    const sex=rawValue(raw,'sexe','sex','gender'); if(sex)$('cinSexe').value=String(sex).toLowerCase().startsWith('f')?'Féminin':'Masculin';
-    const address=rawValue(raw,'adresse','address'); if(address){$('cinAdresse').value=String(address).replace(/\s+/g,' '); if(!$('domAdresse').value)$('domAdresse').value=String(address).replace(/\s+/g,' ')}
-    const city=rawValue(raw,'ville','city'); if(city)$('cinVille').value=city;
-    if(docKey==='domicile'){
-      const domAddress=rawValue(raw,'adresse confirmee','adresse confirmée','adresse','address'); if(domAddress)$('domAdresse').value=String(domAddress).replace(/\s+/g,' ');
-      const domType=rawValue(raw,'type document','document_type','type'); if(domType)$('domType').value=[...$('domType').options].find(o=>o.text.toLowerCase()===String(domType).toLowerCase())?.value || $('domType').value;
-      const issuer=rawValue(raw,'emetteur','émetteur','issuer','provider'); if(issuer)$('domEmetteur').value=issuer;
-      const docDate=isoDate(rawValue(raw,'date document','document_date','date')); if(docDate)$('domDate').value=docDate.slice(0,7);
-    }
-  }
-  if(scope==='vehicle'){
-    const reg=ai.vehicle||rawValue(raw,'immatriculation','registration_number','numero immatriculation'); if(reg)$('vehicleReg').value=reg;
-    const make=rawValue(raw,'marque','make','brand'); if(make)$('vehicleMake').value=make;
-    const model=rawValue(raw,'modele','model'); if(model)$('vehicleModel').value=model;
-    const vin=rawValue(raw,'chassis','vin'); if(vin)$('vehicleVin').value=vin;
-    const fuel=rawValue(raw,'carburant','energie','fuel'); if(fuel)$('vehicleFuel').value=fuel;
-  }
-  if(scope==='claim'){
-    const date=rawValue(raw,'date accident','date_accident','date'); if(date && /^\d{4}-\d{2}-\d{2}/.test(String(date)))$('claimDate').value=String(date).slice(0,10);
-    const loc=rawValue(raw,'lieu','location'); if(loc)$('claimLocation').value=loc;
-    const desc=ai.accident_summary||rawValue(raw,'description','accident_summary'); if(desc)$('claimDescription').value=desc;
-    const cost=rawValue(raw,'total_cost','cout','total'); if(cost)$('claimCost').value=String(cost).replace(/[^\d.]/g,'');
-  }
-  renderOcr();
+/* ===== TABLE FILTER ===== */
+function filterTable(input, tableId) {
+  const q = input.value.toLowerCase();
+  document.querySelectorAll('#' + tableId + ' tbody tr').forEach(tr => {
+    tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
 }
 
-document.addEventListener('click', async e=>{
-  const client=e.target.closest('[data-pick-client]'); if(client) return pickClient(Number(client.dataset.pickClient));
-  const vehicle=e.target.closest('[data-pick-vehicle]'); if(vehicle) return pickVehicle(Number(vehicle.dataset.pickVehicle));
-  const claim=e.target.closest('[data-pick-claim]'); if(claim) return pickClaim(Number(claim.dataset.pickClaim));
+/* ===== KEYBOARD SHORTCUT: Ctrl+S ===== */
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    showFlash('Brouillon sauvegardé automatiquement', 'ok');
+  }
 });
-document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
-document.querySelectorAll('input[type=file][data-doc]').forEach(i=>i.addEventListener('change',()=>uploadDocument(i)));
-$('refreshBtn').onclick=refresh;$('newClientBtn').onclick=clearClient;$('clearClientBtn').onclick=clearClient;$('newVehicleBtn').onclick=clearVehicle;$('newClaimBtn').onclick=clearClaim;
-$('resetCinBtn').onclick=()=>resetFields('cinFields');
-$('saveClientBtn').onclick=()=>saveClient().catch(e=>showFlash(e.message,'err'));$('saveVehicleBtn').onclick=()=>saveVehicle().catch(e=>showFlash(e.message,'err'));$('saveClaimBtn').onclick=()=>saveClaim().catch(e=>showFlash(e.message,'err'));
-$('deleteClientBtn').onclick=()=>confirm('Supprimer ce client et ses donnees liees ?')&&removeActive('client').catch(e=>showFlash(e.message,'err'));
-$('deleteVehicleBtn').onclick=()=>confirm('Supprimer ce vehicule ?')&&removeActive('vehicle').catch(e=>showFlash(e.message,'err'));
-$('deleteClaimBtn').onclick=()=>confirm('Supprimer ce sinistre ?')&&removeActive('claim').catch(e=>showFlash(e.message,'err'));
-$('openClaimBtn').onclick=()=>{clearClaim();setTab('claim')};$('claimReviewBtn').onclick=()=>updateClaimStatus('UNDER_REVIEW').catch(e=>showFlash(e.message,'err'));$('closeClaimBtn').onclick=()=>updateClaimStatus('CLOSED').catch(e=>showFlash(e.message,'err'));
-$('clearOcrBtn').onclick=()=>{state.ocr={};saveLocal();renderOcr();showFlash('Cache OCR vide.','ok')};$('searchInput').oninput=renderTree;
-refresh();
 </script>
 </body>
 </html>
