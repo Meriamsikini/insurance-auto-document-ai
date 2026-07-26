@@ -32,3 +32,5 @@ Desktop.ini
 
 # Uploads (si générés)
 uploads/
+
+*.pdf
