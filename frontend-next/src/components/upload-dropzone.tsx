@@ -53,13 +53,13 @@ export function DocUploadChip({
     <div
       {...getRootProps()}
       className={cn(
-        "group relative flex min-w-[168px] flex-1 cursor-pointer items-center gap-2.5 rounded-lg border border-dashed border-line bg-surface2/60 px-3 py-2.5 transition hover:border-brand-400 hover:bg-brand-500/5",
+        "group relative flex min-w-[160px] flex-1 cursor-pointer items-center gap-2 rounded-lg border border-dashed border-line bg-surface2/60 px-2.5 py-2 transition hover:border-brand-400 hover:bg-brand-500/5",
         isDragActive && "border-brand-400 bg-brand-500/10 ring-4 ring-brand-500/10",
         done && "border-solid border-emerald-500/40 bg-emerald-500/5",
       )}
     >
       <input {...getInputProps()} />
-      <span className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-md transition", chipToneClasses[tone])}>
+      <span className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-md transition", chipToneClasses[tone])}>
         <Icon size={14} />
       </span>
       <div className="min-w-0 flex-1">

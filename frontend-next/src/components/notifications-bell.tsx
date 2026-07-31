@@ -87,7 +87,7 @@ export function NotificationsBell() {
     <div className="relative" ref={containerRef}>
       <button
         onClick={() => setOpen((value) => !value)}
-        className="relative grid h-9 w-9 place-items-center rounded-lg border border-line bg-surface2 text-ink2 shadow-card transition hover:border-brand-400 hover:text-brand-300"
+        className="relative grid h-8 w-8 place-items-center rounded-lg border border-line bg-surface2 text-ink2 shadow-card transition hover:border-brand-400 hover:text-brand-300"
       >
         <Bell size={17} />
         {unread > 0 && (
@@ -98,8 +98,8 @@ export function NotificationsBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-80 animate-slide-down overflow-hidden rounded-2xl border border-line bg-surface shadow-popover">
-          <div className="flex items-center justify-between border-b border-line px-4 py-3">
+        <div className="absolute right-0 z-50 mt-2 w-80 animate-slide-down overflow-hidden rounded-xl border border-line bg-surface shadow-popover">
+          <div className="flex items-center justify-between border-b border-line px-3 py-2">
             <span className="text-sm font-bold text-ink">Notifications</span>
             {unread > 0 && <span className="text-xs font-semibold text-brand-300">{unread} non lues</span>}
           </div>
@@ -116,7 +116,7 @@ export function NotificationsBell() {
               <div
                 key={notification.id}
                 className={cn(
-                  "flex items-start gap-2 border-b border-line/70 px-4 py-3 text-sm last:border-0",
+                  "flex items-start gap-2 border-b border-line/70 px-3 py-2.5 text-sm last:border-0",
                   !notification.is_read && "bg-brand-500/5",
                 )}
               >

@@ -26,9 +26,9 @@ const buttonVariants: Record<ButtonVariant, string> = {
 };
 
 const buttonSizes: Record<ButtonSize, string> = {
-  sm: "h-8 px-2.5 text-xs gap-1.5",
-  md: "h-9 px-3.5 text-sm gap-2",
-  icon: "h-9 w-9 p-0",
+  sm: "h-7 px-2 text-xs gap-1",
+  md: "h-8 px-2.5 text-sm gap-1.5",
+  icon: "h-8 w-8 p-0", // h-8 is fine, let's not make it smaller
 };
 
 export const Button = forwardRef<
@@ -55,20 +55,20 @@ export function IconButton({ className, ...props }: ButtonHTMLAttributes<HTMLBut
 /* ----------------------------------- Card ----------------------------------- */
 
 export const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("rounded-2xl border border-line bg-surface shadow-soft", className)} {...props} />
+  <div ref={ref} className={cn("rounded-lg border border-line bg-surface shadow-soft", className)} {...props} />
 ));
 Card.displayName = "Card";
 
 export function Panel({ children, className }: PropsWithChildren<{ className?: string }>) {
-  return <section className={cn("flex min-h-0 flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-soft", className)}>{children}</section>;
+  return <section className={cn("flex min-h-0 flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-soft", className)}>{children}</section>;
 }
 
 export function PanelHead({ children, className }: PropsWithChildren<{ className?: string }>) {
-  return <div className={cn("flex items-center justify-between gap-3 border-b border-line bg-surface2/70 px-4 py-3.5", className)}>{children}</div>;
+  return <div className={cn("flex items-center justify-between gap-3 border-b border-line bg-surface2/70 px-3 py-2", className)}>{children}</div>;
 }
 
 export function PanelBody({ children, className }: PropsWithChildren<{ className?: string }>) {
-  return <div className={cn("min-h-0 flex-1 overflow-y-auto p-4 scrollbar-thin", className)}>{children}</div>;
+  return <div className={cn("min-h-0 flex-1 overflow-y-auto p-2.5 scrollbar-thin", className)}>{children}</div>;
 }
 
 /* ----------------------------------- Field ---------------------------------- */
@@ -86,7 +86,7 @@ export function Field({ label, children, full, hint }: PropsWithChildren<{ label
 /* ------------------------------- Form controls ------------------------------ */
 
 const controlBase =
-  "w-full rounded-lg border border-line bg-surface2 px-3 py-2 text-sm text-ink outline-none transition placeholder:text-ink3 focus:border-brand-400 focus:ring-4 focus:ring-brand-500/15 disabled:bg-surface disabled:text-ink3";
+  "w-full rounded-md border border-line bg-surface2 px-2.5 py-1.5 text-sm text-ink outline-none transition placeholder:text-ink3 focus:border-brand-400 focus:ring-4 focus:ring-brand-500/15 disabled:bg-surface disabled:text-ink3";
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(({ className, ...props }, ref) => (
   <input ref={ref} className={cn(controlBase, className)} {...props} />
@@ -113,7 +113,7 @@ export function Badge({ children, tone = "slate" }: PropsWithChildren<{ tone?: "
     amber: "bg-amber-500/12 text-amber-400 border border-amber-500/25",
     red: "bg-rose-500/12 text-rose-400 border border-rose-500/25",
   };
-  return <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold", tones[tone])}>{children}</span>;
+  return <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-extrabold", tones[tone])}>{children}</span>;
 }
 
 /* --------------------------------- StatCard --------------------------------- */
@@ -144,12 +144,12 @@ export function StatCard({
   tone?: "brand" | "teal" | "amber" | "slate";
 }) {
   return (
-    <Card className="flex items-center gap-3 p-4">
-      <span className={cn("grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br text-white", statTones[tone])}>
+    <Card className="flex items-center gap-2.5 p-2.5">
+      <span className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-md bg-gradient-to-br text-white", statTones[tone])}>
         <Icon size={19} />
       </span>
       <div className="min-w-0">
-        <div className={cn("text-2xl font-extrabold", statNumberTones[tone])}>{value}</div>
+        <div className={cn("text-lg font-extrabold", statNumberTones[tone])}>{value}</div>
         <div className="truncate text-xs font-semibold uppercase tracking-wide text-ink3">{label}</div>
       </div>
     </Card>
@@ -168,7 +168,7 @@ export function SegmentedTabs<T extends string>({
   onChange: (key: T) => void;
 }) {
   return (
-    <div className="flex gap-1 rounded-xl bg-surface2 p-1">
+    <div className="flex gap-1 rounded-lg bg-surface2 p-1">
       {items.map((item) => {
         const Icon = item.icon;
         const active = item.key === value;
@@ -178,7 +178,7 @@ export function SegmentedTabs<T extends string>({
             type="button"
             onClick={() => onChange(item.key)}
             className={cn(
-              "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-bold transition",
+              "flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-bold transition",
               active ? "bg-surface text-brand-300 shadow-card" : "text-ink2 hover:text-ink",
             )}
           >
@@ -203,8 +203,8 @@ export function EmptyState({
   description?: string;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-line bg-surface2/40 p-8 text-center">
-      <span className="grid h-10 w-10 place-items-center rounded-full bg-surface3 text-ink3">
+    <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-line bg-surface2/40 p-5 text-center">
+      <span className="grid h-8 w-8 place-items-center rounded-full bg-surface3 text-ink3">
         <Icon size={18} />
       </span>
       <p className="text-sm font-semibold text-ink2">{title}</p>

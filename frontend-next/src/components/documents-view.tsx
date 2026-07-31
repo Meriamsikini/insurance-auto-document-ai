@@ -73,14 +73,14 @@ export function DocumentsView({
 }) {
   if (clients.length === 0) {
     return (
-      <div className="mx-auto max-w-[1600px] p-4 lg:p-6">
+      <div className="mx-auto max-w-[1600px] p-4">
         <EmptyState icon={FileText} title="Aucun dossier" description="Les documents apparaitront ici une fois des clients crees." />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-[1600px] space-y-3 p-4 lg:p-6">
+    <div className="mx-auto max-w-[1600px] space-y-3 p-4  ">
       <p className="text-sm text-ink3">Documents regroupes par dossier client. Ouvrez un dossier pour afficher ses pieces.</p>
       {clients.map((client) => {
         const clientVehicles = vehicles.filter((vehicle) => vehicle.client_id === client.id);

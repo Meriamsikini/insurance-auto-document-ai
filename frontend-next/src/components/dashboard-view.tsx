@@ -75,7 +75,7 @@ export function DashboardView({
   }, [dossiers, search, status, sort]);
 
   return (
-    <div className="mx-auto max-w-[1600px] space-y-5 p-4 lg:p-6">
+    <div className="mx-auto max-w-[1600px] space-y-5 p-4 ">
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         <StatCard label="Clients" value={clients.length} icon={User} tone="brand" />
         <StatCard label="Vehicules" value={vehicles.length} icon={Car} tone="teal" />
@@ -107,7 +107,7 @@ export function DashboardView({
         </div>
 
         {filtered.length === 0 ? (
-          <div className="p-6">
+          <div className="p-4">
             <EmptyState icon={User} title="Aucun client ne correspond" description="Ajustez la recherche ou les filtres." />
           </div>
         ) : (

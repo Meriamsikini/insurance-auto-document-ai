@@ -85,7 +85,7 @@ export function GlobalSearch({
           setOpen(true);
           setTimeout(() => inputRef.current?.focus(), 0);
         }}
-        className="flex w-full items-center gap-2 rounded-lg border border-line bg-surface2 px-3 py-2 text-sm text-ink3 shadow-card transition hover:border-brand-400"
+        className="flex h-8 w-full items-center gap-2 rounded-lg border border-line bg-surface2 px-3 text-sm text-ink3 shadow-card transition hover:border-brand-400"
       >
         <Search size={16} />
         <span className="flex-1 truncate text-left">Rechercher un client, vehicule, sinistre...</span>
@@ -93,7 +93,7 @@ export function GlobalSearch({
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 z-50 mt-2 animate-slide-down overflow-hidden rounded-2xl border border-line bg-surface shadow-popover">
+        <div className="absolute left-0 right-0 z-50 mt-2 animate-slide-down overflow-hidden rounded-xl border border-line bg-surface shadow-popover">
           <div className="flex items-center gap-2 border-b border-line px-3 py-2.5">
             <Search size={16} className="text-ink3" />
             <input

@@ -1,4 +1,8 @@
-import axios from "axios";
+/**
+ * src/lib/api.ts
+ * Main API client — re-exports authApi so all business requests carry the JWT.
+ */
+import { authApi } from "@/lib/auth";
 
 export type JsonRecord = Record<string, unknown>;
 
@@ -58,17 +62,12 @@ export type DocumentItem = {
   created_at: string;
 };
 
-export const api = axios.create({
-  baseURL: "/api/v1",
-});
-
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    const detail = error.response?.data?.detail;
-    return Promise.reject(new Error(detail || error.message || "Erreur API"));
-  },
-);
+/**
+ * `api` — authenticated axios instance.
+ * All requests automatically include `Authorization: Bearer <token>` via
+ * the interceptor defined in src/lib/auth.ts.
+ */
+export const api = authApi;
 
 export async function fetchPlatformData() {
   const [clients, vehicles, claims, documents] = await Promise.all([

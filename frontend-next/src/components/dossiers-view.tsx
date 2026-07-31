@@ -64,7 +64,7 @@ export function DossiersView({
     .sort((a, b) => a.percent - b.percent);
 
   return (
-    <div className="mx-auto max-w-[1600px] space-y-5 p-4 lg:p-6">
+    <div className="mx-auto max-w-[1600px] space-y-5 p-4 ">
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label="Dossiers" value={dossiers.length} icon={FolderKanban} tone="brand" />
         <StatCard label="Complets" value={completeCount} icon={CheckCircle2} tone="teal" />
@@ -177,15 +177,15 @@ function DossierDetail({
   }
 
   return (
-    <div className="mx-auto max-w-[1100px] space-y-5 p-4 lg:p-6">
+    <div className="mx-auto max-w-[1100px] space-y-5 p-4 ">
       <button onClick={onBack} className="flex items-center gap-2 text-sm font-semibold text-ink2 hover:text-ink">
         <ArrowLeft size={15} /> Retour aux dossiers
       </button>
 
-      <Card className="p-5">
+      <Card className="p-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-sm font-extrabold text-white">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-sm font-extrabold text-white">
               {dossier.client.full_name
                 .trim()
                 .split(/\s+/)
@@ -194,7 +194,7 @@ function DossierDetail({
                 .join("")}
             </span>
             <div>
-              <div className="text-lg font-extrabold text-ink">{dossier.client.full_name}</div>
+              <div className="text-base font-extrabold text-ink">{dossier.client.full_name}</div>
               <div className="text-sm text-ink3">
                 {dossier.client.cin_number || "Sans CIN"} &middot; {dossier.vehicles.length} vehicule(s) &middot; {dossier.claims.length} sinistre(s) &middot; {clientDocCount} document(s)
               </div>

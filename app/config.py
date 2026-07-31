@@ -32,6 +32,11 @@ class Settings(BaseSettings):
 
     cors_origins: str = Field(default="*", alias="CORS_ORIGINS")
 
+    # --- Security ---
+    # Generate with: openssl rand -hex 32
+    secret_key: str = Field(..., alias="SECRET_KEY")
+    access_token_expire_minutes: int = Field(default=60 * 24 * 7, alias="ACCESS_TOKEN_EXPIRE_MINUTES")  # 7 days
+
     @property
     def database_url(self) -> str:
         return URL.create(
