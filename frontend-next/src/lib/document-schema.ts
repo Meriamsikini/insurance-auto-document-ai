@@ -274,6 +274,13 @@ export const CLAIM_CARDS: CardDef[] = [
   },
 ];
 
+export const CLIENT_DOC_TYPES = new Set(CLIENT_CARDS.map((c) => c.documentType).filter((v): v is string => !!v));
+export const VEHICLE_DOC_TYPES = new Set([
+  ...VEHICLE_CARDS.map((c) => c.documentType).filter((v): v is string => !!v),
+  "carte_grise", // Also handle this possible value
+]);
+export const CLAIM_DOC_TYPES = new Set(CLAIM_CARDS.map((c) => c.documentType).filter((v): v is string => !!v));
+
 export const ALL_CARDS: CardDef[] = [...CLIENT_CARDS, ...VEHICLE_CARDS, ...CLAIM_CARDS];
 
 export function cardsFor(scope: Scope): CardDef[] {
@@ -295,9 +302,16 @@ export function matchDocuments(
   return documents
     .filter((document) => document.document_type === card.documentType)
     .filter((document) => {
-      if (card.scope === "client") return document.client_id === ids.clientId;
-      if (card.scope === "vehicle") return document.vehicle_id === ids.vehicleId;
-      return document.sinistre_id === ids.claimId;
+      if (card.scope === "client") {
+        return !!ids.clientId && document.client_id === ids.clientId;
+      }
+      if (card.scope === "vehicle") {
+        return !!ids.vehicleId && document.vehicle_id === ids.vehicleId;
+      }
+      if (card.scope === "claim") {
+        return !!ids.claimId && document.sinistre_id === ids.claimId;
+      }
+      return false;
     })
     .sort((a, b) => b.id - a.id);
 }

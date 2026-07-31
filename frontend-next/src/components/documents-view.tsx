@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Car, ChevronDown, ChevronRight, ClipboardCheck, FileText, Loader2, User } from "lucide-react";
+import { CLAIM_DOC_TYPES, VEHICLE_DOC_TYPES } from "@/lib/document-schema";
 import type { Claim, Client, DocumentItem, Vehicle } from "@/lib/api";
 import { Badge, Card, EmptyState } from "@/components/ui";
 
@@ -38,7 +39,7 @@ function Branch({
   depth,
   children,
 }: {
-  icon: typeof Car;
+  icon: React.ElementType;
   label: string;
   count: number;
   depth: number;
@@ -85,11 +86,15 @@ export function DocumentsView({
       {clients.map((client) => {
         const clientVehicles = vehicles.filter((vehicle) => vehicle.client_id === client.id);
         const clientClaims = claims.filter((claim) => claim.client_id === client.id);
-        const clientDocs = documents.filter((document) => document.client_id === client.id && !document.vehicle_id && !document.sinistre_id);
-        const total =
-          clientDocs.length +
-          clientVehicles.reduce((sum, vehicle) => sum + documents.filter((document) => document.vehicle_id === vehicle.id).length, 0) +
-          clientClaims.reduce((sum, claim) => sum + documents.filter((document) => document.sinistre_id === claim.id).length, 0);
+        const clientDocs = documents.filter(
+          (doc) =>
+            doc.client_id === client.id &&
+            !doc.vehicle_id &&
+            !doc.sinistre_id &&
+            !VEHICLE_DOC_TYPES.has(doc.document_type) &&
+            !CLAIM_DOC_TYPES.has(doc.document_type),
+        );
+        const total = documents.filter((doc) => doc.client_id === client.id).length;
 
         return (
           <Card key={client.id} className="overflow-hidden">
@@ -103,26 +108,31 @@ export function DocumentsView({
                 </div>
               )}
               {clientVehicles.map((vehicle) => {
-                const vehicleDocs = documents.filter((document) => document.vehicle_id === vehicle.id);
+                // A "vehicle document" is linked to a vehicle but NOT to a claim.
+                const vehicleDocs = documents.filter((doc) => doc.vehicle_id === vehicle.id && !doc.sinistre_id);
+                const vehicleClaims = clientClaims.filter((claim) => claim.vehicle_id === vehicle.id);
+                const vehicleTotalDocs = vehicleDocs.length + vehicleClaims.reduce((sum, claim) => sum + documents.filter((doc) => doc.sinistre_id === claim.id).length, 0);
+
+                if (vehicleTotalDocs === 0) return null;
+
                 return (
-                  <Branch key={vehicle.id} icon={Car} label={vehicle.registration_number || `Vehicule #${vehicle.id}`} count={vehicleDocs.length} depth={1}>
-                    {vehicleDocs.length === 0 ? (
-                      <p className="text-xs text-ink3">Aucun document.</p>
-                    ) : (
-                      vehicleDocs.map((document) => <DocRow key={document.id} document={document} onDownload={onDownload} />)
-                    )}
-                  </Branch>
-                );
-              })}
-              {clientClaims.map((claim) => {
-                const claimDocs = documents.filter((document) => document.sinistre_id === claim.id);
-                return (
-                  <Branch key={claim.id} icon={ClipboardCheck} label={claim.claim_number} count={claimDocs.length} depth={1}>
-                    {claimDocs.length === 0 ? (
-                      <p className="text-xs text-ink3">Aucun document.</p>
-                    ) : (
-                      claimDocs.map((document) => <DocRow key={document.id} document={document} onDownload={onDownload} />)
-                    )}
+                  <Branch key={vehicle.id} icon={Car} label={vehicle.registration_number || `Vehicule #${vehicle.id}`} count={vehicleTotalDocs} depth={1}>
+                    <>
+                      <div className="space-y-1.5">
+                        {vehicleDocs.map((document) => (
+                          <DocRow key={document.id} document={document} onDownload={onDownload} />
+                        ))}
+                      </div>
+                      {vehicleClaims.map((claim) => {
+                        const claimDocs = documents.filter((doc) => doc.sinistre_id === claim.id);
+                        if (claimDocs.length === 0) return null;
+                        return (
+                          <Branch key={claim.id} icon={ClipboardCheck} label={claim.claim_number} count={claimDocs.length} depth={2}>
+                            {claimDocs.map((document) => <DocRow key={document.id} document={document} onDownload={onDownload} />)}
+                          </Branch>
+                        );
+                      })}
+                    </>
                   </Branch>
                 );
               })}

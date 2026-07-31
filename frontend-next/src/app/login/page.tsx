@@ -1,19 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Loader2, Lock, Mail, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import { useAuthStore } from "@/store/auth-store";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated, isLoading, hydrate } = useAuthStore();
+  const { login, isAuthenticated, isLoading } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => { hydrate(); }, [hydrate]);
   useEffect(() => { if (isAuthenticated) router.replace("/dashboard"); }, [isAuthenticated, router]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -32,11 +32,16 @@ export default function LoginPage() {
       <div className="pointer-events-none fixed inset-0" style={{ background: "radial-gradient(circle at 20% 30%, rgba(79,110,247,0.12), transparent 40rem), radial-gradient(circle at 80% 70%, rgba(56,189,248,0.07), transparent 35rem)" }} />
       <div className="relative w-full max-w-md">
         <div className="mb-8 flex flex-col items-center gap-3">
-          <span className="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-sky-400 shadow-glow">
-            <ShieldCheck size={32} className="text-white" />
-          </span>
+          <Image
+            src="/logo.jpeg"
+            alt="AssurAuto Logo"
+            width={64}
+            height={64}
+            className="rounded-2xl shadow-glow"
+            priority
+          />
           <div className="text-center">
-            <h1 className="text-2xl font-extrabold text-ink">AssurAuto Pro</h1>
+            
             <p className="mt-1 text-sm text-ink3">Espace collaborateur — accès restreint</p>
           </div>
         </div>
@@ -47,7 +52,7 @@ export default function LoginPage() {
               <label className="text-[11px] font-bold uppercase tracking-wide text-ink3">Email professionnel</label>
               <div className="relative">
                 <Mail size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink3" />
-                <input type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="prenom.nom@slouiglobal.com" required className="w-full rounded-lg border border-line bg-surface2 py-2.5 pl-9 pr-3 text-sm text-ink outline-none transition placeholder:text-ink3 focus:border-brand-400 focus:ring-4 focus:ring-brand-500/15" />
+                <input type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="prenom.nom@slaouiglobal.com" required className="w-full rounded-lg border border-line bg-surface2 py-2.5 pl-9 pr-3 text-sm text-ink outline-none transition placeholder:text-ink3 focus:border-brand-400 focus:ring-4 focus:ring-brand-500/15" />
               </div>
             </div>
             <div className="flex flex-col gap-1.5">
@@ -67,7 +72,7 @@ export default function LoginPage() {
           </form>
           <p className="mt-6 text-center text-xs text-ink3">Accès réservé aux employés autorisés.<br />Contactez votre administrateur pour tout problème.</p>
         </div>
-        <p className="mt-6 text-center text-xs text-ink3">AssurAuto Pro · v2.0 · © 2024 Slouig Global</p>
+        
       </div>
     </div>
   );

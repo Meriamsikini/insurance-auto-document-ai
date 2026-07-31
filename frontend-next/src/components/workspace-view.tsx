@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronRight, FileStack, Plus, Save, Search, Trash2, User } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronDown, ChevronRight, FileStack, Plus, Save, Search, Trash2, User } from "lucide-react";
 import { toast } from "sonner";
 import { usePlatform } from "./platform-provider";
 import { Badge, Button, EmptyState, Panel, PanelBody, PanelHead, SegmentedTabs } from "@/components/ui";
@@ -139,6 +140,29 @@ export function WorkspaceView() {
     exportClaimReport,
   } = usePlatform();
 
+  const [openClient, setOpenClient] = useState<number | null>(null);
+  const [openVehicle, setOpenVehicle] = useState<number | null>(null);
+
+  useEffect(() => {
+    setOpenClient(activeClientId);
+  }, [activeClientId]);
+
+  useEffect(() => {
+    setOpenVehicle(activeVehicleId);
+  }, [activeVehicleId]);
+
+  const handleClientClick = (client: Client) => {
+    const isOpening = openClient !== client.id;
+    setOpenClient(isOpening ? client.id : null);
+    if (isOpening) pickClient(client);
+  };
+
+  const handleVehicleClick = (vehicle: Vehicle) => {
+    const isOpening = openVehicle !== vehicle.id;
+    setOpenVehicle(isOpening ? vehicle.id : null);
+    if (isOpening) pickVehicle(vehicle);
+  };
+
   return (
     <div className="mx-auto max-w-[1600px] p-4 lg:p-6">
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
@@ -172,54 +196,64 @@ export function WorkspaceView() {
             <div className="flex flex-col gap-2">
               {isLoading && <div className="flex items-center gap-2 rounded-lg border border-dashed border-line p-4 text-sm text-ink3">Chargement...</div>}
               {!isLoading && filteredClients.length === 0 && <EmptyState icon={User} title="Aucun dossier" description="Creez votre premier client pour demarrer." />}
-              {filteredClients.map((client) => (
-                <div key={client.id} className="overflow-hidden rounded-xl border border-line bg-surface2/40">
-                  <button
-                    className={`flex w-full items-start gap-2.5 p-2.5 text-left transition hover:bg-brand-500/10 ${client.id === activeClientId ? "bg-brand-500/10" : ""}`}
-                    onClick={() => pickClient(client)}
-                  >
-                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-xs font-extrabold text-white">
-                      {initials(client.full_name)}
-                    </span>
-                    <span className="min-w-0">
-                      <b className={`block truncate text-sm ${client.id === activeClientId ? "text-brand-300" : "text-ink"}`}>{client.full_name}</b>
-                      <span className="text-xs text-ink3">
-                        {client.cin_number || "Sans CIN"} &middot; {vehiclesOf(client.id).length} vehicule(s)
+              {filteredClients.map((client) => {
+                const isClientOpen = openClient === client.id;
+                return (
+                  <div key={client.id} className="overflow-hidden rounded-xl border border-line bg-surface2/40">
+                    <button
+                      className={`flex w-full items-center gap-2.5 p-2.5 text-left transition hover:bg-brand-500/10 ${client.id === activeClientId ? "bg-brand-500/10" : ""}`}
+                      onClick={() => handleClientClick(client)}
+                    >
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-xs font-extrabold text-white">
+                        {initials(client.full_name)}
                       </span>
-                    </span>
-                  </button>
-                  <div className="border-t border-line bg-surface2/40 p-2">
-                    {vehiclesOf(client.id).map((vehicle) => (
-                      <div key={vehicle.id}>
-                        <button
-                          className={`flex w-full items-start gap-1.5 rounded-lg p-1.5 text-left text-sm hover:bg-surface3 ${vehicle.id === activeVehicleId ? "bg-surface3 text-brand-300" : "text-ink2"}`}
-                          onClick={() => pickVehicle(vehicle)}
-                        >
-                          <ChevronRight size={14} className="mt-0.5 shrink-0" />
-                          <span className="min-w-0">
-                            <b className="block truncate">{vehicle.registration_number || "Vehicule sans plaque"}</b>
-                            <span className="text-xs text-ink3">{[vehicle.make, vehicle.model].filter(Boolean).join(" ") || "Modele non renseigne"}</span>
-                          </span>
-                        </button>
-                        {claimsOf(vehicle.id).map((claim) => (
-                          <button
-                            key={claim.id}
-                            className={`ml-6 flex w-[calc(100%-1.5rem)] items-start gap-1.5 rounded-lg p-1.5 text-left text-sm hover:bg-surface3 ${claim.id === activeClaimId ? "bg-surface3 text-brand-300" : "text-ink2"}`}
-                            onClick={() => pickClaim(claim)}
-                          >
-                            <ChevronRight size={13} className="mt-0.5 shrink-0" />
-                            <span className="min-w-0">
-                              <b className="block truncate">{claim.claim_number}</b>
-                              <span className="text-xs text-ink3">{claim.accident_date || "Date inconnue"}</span>
-                            </span>
-                          </button>
-                        ))}
+                      <span className="min-w-0 flex-1">
+                        <b className={`block truncate text-sm ${client.id === activeClientId ? "text-brand-300" : "text-ink"}`}>{client.full_name}</b>
+                        <span className="text-xs text-ink3">
+                          {client.cin_number || "Sans CIN"} &middot; {vehiclesOf(client.id).length} vehicule(s)
+                        </span>
+                      </span>
+                      {isClientOpen ? <ChevronDown size={16} className="shrink-0 text-ink3" /> : <ChevronRight size={16} className="shrink-0 text-ink3" />}
+                    </button>
+                    {isClientOpen && (
+                      <div className="border-t border-line bg-surface2/40 p-2">
+                        {vehiclesOf(client.id).map((vehicle) => {
+                          const isVehicleOpen = openVehicle === vehicle.id;
+                          return (
+                            <div key={vehicle.id}>
+                              <button
+                                className={`flex w-full items-start gap-1.5 rounded-lg p-1.5 text-left text-sm hover:bg-surface3 ${vehicle.id === activeVehicleId ? "bg-surface3 text-brand-300" : "text-ink2"}`}
+                                onClick={() => handleVehicleClick(vehicle)}
+                              >
+                                {isVehicleOpen ? <ChevronDown size={14} className="mt-0.5 shrink-0" /> : <ChevronRight size={14} className="mt-0.5 shrink-0" />}
+                                <span className="min-w-0">
+                                  <b className="block truncate">{vehicle.registration_number || "Vehicule sans plaque"}</b>
+                                  <span className="text-xs text-ink3">{[vehicle.make, vehicle.model].filter(Boolean).join(" ") || "Modele non renseigne"}</span>
+                                </span>
+                              </button>
+                              {isVehicleOpen &&
+                                claimsOf(vehicle.id).map((claim) => (
+                                  <button
+                                    key={claim.id}
+                                    className={`ml-6 flex w-[calc(100%-1.5rem)] items-start gap-1.5 rounded-lg p-1.5 text-left text-sm hover:bg-surface3 ${claim.id === activeClaimId ? "bg-surface3 text-brand-300" : "text-ink2"}`}
+                                    onClick={() => pickClaim(claim)}
+                                  >
+                                    <ChevronRight size={13} className="mt-0.5 shrink-0" />
+                                    <span className="min-w-0">
+                                      <b className="block truncate">{claim.claim_number}</b>
+                                      <span className="text-xs text-ink3">{claim.accident_date || "Date inconnue"}</span>
+                                    </span>
+                                  </button>
+                                ))}
+                            </div>
+                          );
+                        })}
+                        {vehiclesOf(client.id).length === 0 && <div className="p-2 text-sm text-ink3">Aucun vehicule</div>}
                       </div>
-                    ))}
-                    {vehiclesOf(client.id).length === 0 && <div className="p-2 text-sm text-ink3">Aucun vehicule</div>}
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </PanelBody>
         </Panel>

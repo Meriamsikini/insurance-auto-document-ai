@@ -6,9 +6,9 @@
  * Props control which view is shown based on the current route.
  */
 
-import { useEffect, useMemo, useCallback } from "react";
+import { useEffect, useMemo, useCallback, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronRight, FileStack, Plus, Save, Search, Trash2, User } from "lucide-react";
+import { ChevronDown, ChevronRight, FileStack, Plus, Save, Search, Trash2, User } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
@@ -136,6 +136,30 @@ export default function PlatformWorkspace({ initialView, initialTab = "client" }
   const view = initialView;
   const currentTab = initialTab || tab;
 
+  const [openClient, setOpenClient] = useState<number | null>(null);
+  const [openVehicle, setOpenVehicle] = useState<number | null>(null);
+
+  useEffect(() => {
+    // When active client changes, open it in the sidebar
+    setOpenClient(activeClientId);
+  }, [activeClientId]);
+
+  useEffect(() => {
+    // When active vehicle changes, open it in the sidebar
+    setOpenVehicle(activeVehicleId);
+  }, [activeVehicleId]);
+
+  const handleClientClick = (client: Client) => {
+    const isOpening = openClient !== client.id;
+    setOpenClient(isOpening ? client.id : null);
+    if (isOpening) pickClient(client);
+  };
+
+  const handleVehicleClick = (vehicle: Vehicle) => {
+    const isOpening = openVehicle !== vehicle.id;
+    setOpenVehicle(isOpening ? vehicle.id : null);
+    if (isOpening) pickVehicle(vehicle);
+  };
   // ── Task 2: Real data fetching ───────────────────────────────────────────
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["platform"],
@@ -289,6 +313,7 @@ export default function PlatformWorkspace({ initialView, initialTab = "client" }
     router.push("/sinistres");
   }
 
+
   function handleNav(key: string) {
     // Navigation is handled in AppShell via router.push
     if (key === "clients") setTab("client");
@@ -423,15 +448,6 @@ export default function PlatformWorkspace({ initialView, initialTab = "client" }
     toast.success("Suppression effectuée.");
   }
 
-  async function ensureClaimForDocumentUpload() {
-    if (activeClaimId) return activeClaimId;
-    if (!activeClientId || !activeVehicleId) throw new Error("Sélectionnez un client et un véhicule avant d'uploader une pièce sinistre.");
-    const response = await api.post<Claim>("/claims", { client_id: activeClientId, vehicle_id: activeVehicleId, claim_number: nextClaimNumber(), metadata: { created_from_document_upload: true } });
-    setActive({ activeClaimId: response.data.id });
-    await invalidate();
-    return response.data.id;
-  }
-
   async function pollAi(id: number, scope: Tab, docKey: string) {
     for (let i = 0; i < 18; i++) {
       await new Promise((r) => setTimeout(r, 2500));
@@ -478,15 +494,57 @@ export default function PlatformWorkspace({ initialView, initialTab = "client" }
 
   async function uploadDocument(file: File, docKey: string) {
     const card = CARD_BY_KEY.get(docKey);
+    if (!card) return toast.error(`Type de document inconnu: ${docKey}`);
     const scope = (card?.scope ?? "client") as Tab;
     const storedType = card?.documentType ?? docKey;
-    const claimId = scope === "claim" ? await ensureClaimForDocumentUpload() : activeClaimId;
+
+    if (!activeClientId) {
+      toast.error("Veuillez sélectionner ou créer un client avant d'uploader un document.");
+      return;
+    }
+
+    let vehicleId = activeVehicleId;
+    if (scope === "vehicle" || scope === "claim") {
+      if (!vehicleId) {
+        try {
+          const response = await api.post<Vehicle>("/vehicles", { client_id: activeClientId, metadata: { created_from_document_upload: true } });
+          vehicleId = response.data.id;
+          setActive({ activeVehicleId: vehicleId });
+          await invalidate();
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : "Erreur lors de la création du véhicule.");
+          return;
+        }
+      }
+    }
+
+    let claimId = activeClaimId;
+    if (scope === "claim") {
+      const claimIsForCurrentVehicle = claims.some((c) => c.id === claimId && c.vehicle_id === vehicleId);
+      if (!claimId || !claimIsForCurrentVehicle) {
+        if (!vehicleId) { // Should not happen
+          toast.error("Impossible de créer un sinistre sans véhicule associé.");
+          return;
+        }
+        try {
+          const response = await api.post<Claim>("/claims", { client_id: activeClientId, vehicle_id: vehicleId, claim_number: nextClaimNumber(), metadata: { created_from_document_upload: true } });
+          claimId = response.data.id;
+          setActive({ activeClaimId: claimId });
+          await invalidate();
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : "Erreur lors de la création du sinistre.");
+          return;
+        }
+      }
+    }
+
     const form = new FormData();
     form.append("file", file);
     form.append("document_type", storedType);
-    if (activeClientId) form.append("client_id", String(activeClientId));
-    if (scope === "vehicle" && activeVehicleId) form.append("vehicle_id", String(activeVehicleId));
-    if (scope === "claim" && claimId) form.append("sinistre_id", String(claimId));
+    form.append("client_id", String(activeClientId));
+    if (vehicleId) form.append("vehicle_id", String(vehicleId));
+    if (claimId && scope === "claim") form.append("sinistre_id", String(claimId));
+
     toast.info(`Upload en cours: ${file.name}`);
     const response = await api.post<DocumentItem>("/documents/upload", form);
     setPendingDocs([...pendingDocs.filter((d) => d.id !== response.data.id), { id: response.data.id, scope, document_type: response.data.document_type }]);
@@ -533,7 +591,8 @@ export default function PlatformWorkspace({ initialView, initialTab = "client" }
         onRefresh={handleRefresh}
         stats={{ clients: clients.length, vehicles: vehicles.length, claims: claims.length }}
       >
-        <div className="h-full overflow-y-auto scrollbar-thin">
+        {/* Applique un effet de "zoom 90%" à l'ensemble de l'interface */}
+        <div className="h-[111.11%] w-[111.11%] origin-top-left scale-[0.9] transform overflow-y-auto scrollbar-thin">
           {/* DASHBOARD */}
           {view === "dashboard" && (
             <DashboardView clients={clients} vehicles={vehicles} claims={claims} documents={documents} onOpenClient={pickClient} onExportClaim={exportClaimReport} />
@@ -569,40 +628,64 @@ export default function PlatformWorkspace({ initialView, initialTab = "client" }
                     <div className="flex flex-col gap-2">
                       {isLoading && <div className="p-4 text-sm text-ink3">Chargement...</div>}
                       {!isLoading && filteredClients.length === 0 && <EmptyState icon={User} title="Aucun dossier" description="Créez votre premier client pour démarrer." />}
-                      {filteredClients.map((client) => (
-                        <div key={client.id} className="overflow-hidden rounded-xl border border-line bg-surface2/40">
-                          <button className={`flex w-full items-start gap-3 p-3 text-left transition hover:bg-brand-500/10 ${client.id === activeClientId ? "bg-brand-500/10" : ""}`} onClick={() => pickClient(client)}>
-                            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-xs font-extrabold text-white">{initials(client.full_name)}</span>
-                            <span className="min-w-0">
-                              <b className={`block truncate text-sm ${client.id === activeClientId ? "text-brand-300" : "text-ink"}`}>{client.full_name}</b>
-                              <span className="text-xs text-ink3">{client.cin_number || "Sans CIN"} · {vehiclesOf(client.id).length} véhicule(s)</span>
-                            </span>
-                          </button>
-                          <div className="border-t border-line bg-surface2/40 p-2">
-                            {vehiclesOf(client.id).map((vehicle) => (
-                              <div key={vehicle.id}>
-                                <button className={`flex w-full items-start gap-2 rounded-lg p-2 text-left text-sm hover:bg-surface3 ${vehicle.id === activeVehicleId ? "bg-surface3 text-brand-300" : "text-ink2"}`} onClick={() => pickVehicle(vehicle)}>
-                                  <ChevronRight size={14} className="mt-0.5 shrink-0" />
-                                  <span className="min-w-0">
-                                    <b className="block truncate">{vehicle.registration_number || "Sans plaque"}</b>
-                                    <span className="text-xs text-ink3">{[vehicle.make, vehicle.model].filter(Boolean).join(" ") || "Modèle non renseigné"}</span>
-                                  </span>
-                                </button>
-                                {claimsOf(vehicle.id).map((claim) => (
-                                  <button key={claim.id} className={`ml-6 flex w-[calc(100%-1.5rem)] items-start gap-2 rounded-lg p-2 text-left text-sm hover:bg-surface3 ${claim.id === activeClaimId ? "bg-surface3 text-brand-300" : "text-ink2"}`} onClick={() => pickClaim(claim)}>
-                                    <ChevronRight size={13} className="mt-0.5 shrink-0" />
-                                    <span className="min-w-0">
-                                      <b className="block truncate">{claim.claim_number}</b>
-                                      <span className="text-xs text-ink3">{claim.accident_date || "Date inconnue"}</span>
-                                    </span>
-                                  </button>
-                                ))}
+                      {filteredClients.map((client) => {
+                        const isClientOpen = openClient === client.id;
+                        return (
+                          <div key={client.id} className="overflow-hidden rounded-xl border border-line bg-surface2/40">
+                            <button
+                              className={`flex w-full items-center gap-2.5 p-2.5 text-left transition hover:bg-brand-500/10 ${client.id === activeClientId ? "bg-brand-500/10" : ""}`}
+                              onClick={() => handleClientClick(client)}
+                            >
+                              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-xs font-extrabold text-white">
+                                {initials(client.full_name)}
+                              </span>
+                              <span className="min-w-0 flex-1">
+                                <b className={`block truncate text-sm ${client.id === activeClientId ? "text-brand-300" : "text-ink"}`}>{client.full_name}</b>
+                                <span className="text-xs text-ink3">
+                                  {client.cin_number || "Sans CIN"} &middot; {vehiclesOf(client.id).length} vehicule(s)
+                                </span>
+                              </span>
+                              {isClientOpen ? <ChevronDown size={16} className="shrink-0 text-ink3" /> : <ChevronRight size={16} className="shrink-0 text-ink3" />}
+                            </button>
+                            {isClientOpen && (
+                              <div className="border-t border-line bg-surface2/40 p-2">
+                                {vehiclesOf(client.id).map((vehicle) => {
+                                  const isVehicleOpen = openVehicle === vehicle.id;
+                                  return (
+                                    <div key={vehicle.id}>
+                                      <button
+                                        className={`flex w-full items-start gap-1.5 rounded-lg p-1.5 text-left text-sm hover:bg-surface3 ${vehicle.id === activeVehicleId ? "bg-surface3 text-brand-300" : "text-ink2"}`}
+                                        onClick={() => handleVehicleClick(vehicle)}
+                                      >
+                                        {isVehicleOpen ? <ChevronDown size={14} className="mt-0.5 shrink-0" /> : <ChevronRight size={14} className="mt-0.5 shrink-0" />}
+                                        <span className="min-w-0">
+                                          <b className="block truncate">{vehicle.registration_number || "Vehicule sans plaque"}</b>
+                                          <span className="text-xs text-ink3">{[vehicle.make, vehicle.model].filter(Boolean).join(" ") || "Modele non renseigne"}</span>
+                                        </span>
+                                      </button>
+                                      {isVehicleOpen &&
+                                        claimsOf(vehicle.id).map((claim) => (
+                                          <button
+                                            key={claim.id}
+                                            className={`ml-6 flex w-[calc(100%-1.5rem)] items-start gap-1.5 rounded-lg p-1.5 text-left text-sm hover:bg-surface3 ${claim.id === activeClaimId ? "bg-surface3 text-brand-300" : "text-ink2"}`}
+                                            onClick={() => pickClaim(claim)}
+                                          >
+                                            <ChevronRight size={13} className="mt-0.5 shrink-0" />
+                                            <span className="min-w-0">
+                                              <b className="block truncate">{claim.claim_number}</b>
+                                              <span className="text-xs text-ink3">{claim.accident_date || "Date inconnue"}</span>
+                                            </span>
+                                          </button>
+                                        ))}
+                                    </div>
+                                  );
+                                })}
+                                {vehiclesOf(client.id).length === 0 && <div className="p-2 text-sm text-ink3">Aucun vehicule</div>}
                               </div>
-                            ))}
-                            {vehiclesOf(client.id).length === 0 && <div className="p-2 text-sm text-ink3">Aucun véhicule</div>}
+                            )}
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </PanelBody>
                 </Panel>
@@ -695,7 +778,7 @@ export default function PlatformWorkspace({ initialView, initialTab = "client" }
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function Notice({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-xl border border-brand-500/25 bg-brand-500/8 p-3 text-sm font-medium text-brand-200">{children}</div>;
+  return <div className="transform scale-85 rounded-xl border border-brand-500/25 bg-brand-500/8 p-3 text-sm font-medium text-brand-200">{children}</div>;
 }
 
 function UploadSection({ scope, onUpload, documents, ids, action }: {

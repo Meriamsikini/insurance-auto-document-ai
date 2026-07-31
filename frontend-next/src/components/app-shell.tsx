@@ -2,9 +2,9 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
 import {
-  ShieldCheck,
   LayoutDashboard,
   Users,
   Car,
@@ -68,6 +68,7 @@ export function AppShell({
   const { employee, logout } = useAuthStore();
   const [refreshing, setRefreshing] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
   // Close profile dropdown when clicking outside
@@ -121,43 +122,55 @@ export function AppShell({
   return (
     <div className="flex min-h-screen bg-canvas">
       {/* ── Sidebar ── */}
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-line bg-surface lg:flex">
-        <div className="flex items-center gap-3 px-5 py-6">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-sky-400 text-white shadow-glow">
-            <ShieldCheck size={20} />
-          </span>
-          <div>
+      <aside
+        onMouseEnter={() => setIsSidebarExpanded(true)}
+        onMouseLeave={() => setIsSidebarExpanded(false)}
+        className={cn("hidden lg:flex flex-col border-r border-line bg-surface transition-all duration-300 ease-in-out", isSidebarExpanded ? "w-64" : "w-20")}
+      >
+        <div className={cn("flex h-[88px] shrink-0 items-center gap-3 overflow-hidden", isSidebarExpanded ? "px-6" : "px-5")}>
+          <Image src="/logo.jpeg" alt="AssurAuto Logo" width={40} height={40} className="shrink-0 scale-110 rounded-md" />
+          <div className={cn("whitespace-nowrap transition-opacity", isSidebarExpanded ? "opacity-100 duration-200 delay-100" : "opacity-0 duration-100")}>
             <div className="text-base font-extrabold text-ink">AssurAuto</div>
-            <div className="text-[11px] font-medium uppercase tracking-wide text-ink3">
-              Espace gestion
-            </div>
+            <div className="text-[11px] font-medium uppercase tracking-wide text-ink3">Espace gestion</div>
           </div>
         </div>
 
-        <nav className="flex-1 space-y-1 px-3">
+        <nav className={cn("flex-1 space-y-1 transition-all", isSidebarExpanded ? "px-3" : "px-5")}>
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive = activeFromUrl === item.key;
             return (
-              <button
-                key={item.key}
-                onClick={() => handleNav(item.key)}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition",
-                  isActive
-                    ? "bg-brand-500/12 text-brand-300"
-                    : "text-ink2 hover:bg-surface2 hover:text-ink",
+              <div key={item.key} className="group relative">
+                <button
+                  onClick={() => handleNav(item.key)}
+                  className={cn(
+                    "flex w-full items-center rounded-xl py-2.5 text-sm font-semibold transition",
+                    isSidebarExpanded ? "gap-3 px-3" : "justify-center px-0",
+                    isActive ? "bg-brand-500/12 text-brand-300" : "text-ink2 hover:bg-surface2 hover:text-ink",
+                  )}
+                >
+                  <Icon size={17} />
+                  <span className={cn("whitespace-nowrap transition-opacity", isSidebarExpanded ? "opacity-100 duration-200 delay-100" : "w-0 opacity-0")}>
+                    {item.label}
+                  </span>
+                </button>
+                {!isSidebarExpanded && (
+                  <div className="absolute left-full top-1/2 z-50 ml-4 hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-surface3 px-2 py-1 text-xs font-semibold text-ink shadow-lg group-hover:block">
+                    {item.label}
+                  </div>
                 )}
-              >
-                <Icon size={17} />
-                {item.label}
-              </button>
+              </div>
             );
           })}
         </nav>
 
         {/* Stats */}
-        <div className="mx-3 mb-4 mt-6 grid grid-cols-3 gap-2 rounded-xl bg-surface2 p-3 text-center">
+        <div
+          className={cn(
+            "mb-4 mt-6 grid grid-cols-3 gap-2 rounded-xl bg-surface2 p-3 text-center transition-opacity duration-200",
+            isSidebarExpanded ? "mx-3 opacity-100" : "mx-auto opacity-0",
+          )}
+        >
           <MiniStat label="Clients" value={stats.clients} />
           <MiniStat label="Vehic." value={stats.vehicles} />
           <MiniStat label="Sinis." value={stats.claims} />
@@ -167,20 +180,23 @@ export function AppShell({
         {employee && (
           <button
             onClick={() => router.push("/profile")}
-            className="mx-3 mb-3 flex items-center gap-2 rounded-xl border border-line bg-surface2/50 p-3 text-left transition hover:border-brand-400 hover:bg-surface2"
+            className={cn(
+              "mb-3 flex items-center gap-2 rounded-xl border border-line bg-surface2/50 p-3 text-left transition hover:border-brand-400 hover:bg-surface2",
+              isSidebarExpanded ? "mx-3" : "mx-auto w-14 justify-center",
+            )}
           >
             <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-brand-500 to-sky-400 text-xs font-extrabold text-white">
               {initials}
             </span>
-            <div className="min-w-0">
+            <div className={cn("min-w-0", isSidebarExpanded ? "opacity-100" : "pointer-events-none hidden opacity-0")}>
               <p className="truncate text-xs font-bold text-ink">{employee.full_name}</p>
               <p className="truncate text-[10px] text-ink3">{employee.department ?? employee.email}</p>
             </div>
           </button>
         )}
 
-        <div className="border-t border-line px-5 py-4 text-[11px] text-ink3">
-          AssurAuto Pro &middot; v2.0
+        <div className={cn("border-t border-line py-4 text-[11px] text-ink3 transition-all", isSidebarExpanded ? "px-5" : "px-2 text-center")}>
+          {isSidebarExpanded ? "AssurAuto Pro · v2.0" : "v2.0"}
         </div>
       </aside>
 
@@ -188,8 +204,8 @@ export function AppShell({
       <div className="flex min-h-screen flex-1 flex-col">
         {/* Header */}
         <header className="sticky top-0 z-40 flex items-center gap-3 border-b border-line bg-surface/90 px-4 py-3 backdrop-blur lg:px-6">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-brand-500 to-sky-400 text-white lg:hidden">
-            <ShieldCheck size={18} />
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-surface lg:hidden">
+            <Image src="/logo.jpeg" alt="AssurAuto Logo" width={32} height={32} className="rounded-md" />
           </span>
 
           <GlobalSearch

@@ -167,6 +167,7 @@ interface PlatformContextType {
   pickClaim: (claim: Claim) => void;
 
   deleteClient: (client: Client) => Promise<void>;
+  deleteDocument: (document: DocumentItem) => Promise<void>;
   removeActive: (kind: Tab) => Promise<void>;
 
   uploadDocument: (file: File, docKey: string) => Promise<void>;
@@ -564,6 +565,28 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     toast.success("Dossier supprime.");
   }
 
+  async function deleteDocument(documentToDelete: DocumentItem) {
+    // Optimistic update
+    await queryClient.cancelQueries({ queryKey: ["platform"] });
+
+    const previousData = queryClient.getQueryData<Awaited<ReturnType<typeof fetchPlatformData>>>(["platform"]);
+
+    if (previousData) {
+      queryClient.setQueryData<Awaited<ReturnType<typeof fetchPlatformData>>>(["platform"], {
+        ...previousData,
+        documents: previousData.documents.filter((doc) => doc.id !== documentToDelete.id),
+      });
+    }
+
+    try {
+      await api.delete(`/documents/${documentToDelete.id}`);
+      toast.success(`Document "${documentToDelete.original_filename}" supprimé.`);
+    } catch (error) {
+      if (previousData) queryClient.setQueryData(["platform"], previousData);
+      toast.error(error instanceof Error ? error.message : "Erreur lors de la suppression du document.");
+    }
+  }
+
   async function removeActive(kind: Tab) {
     if (kind === "client" && activeClient) {
       await deleteClient(activeClient);
@@ -745,6 +768,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     pickVehicle,
     pickClaim,
     deleteClient,
+    deleteDocument,
     removeActive,
     saveClient,
     saveVehicle,
