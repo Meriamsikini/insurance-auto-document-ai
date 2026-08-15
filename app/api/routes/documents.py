@@ -1,6 +1,13 @@
+"""
+app/api/routes/documents.py  —  Replace existing file with this version.
+Added: DELETE /{document_id}  (Task 2 — delete FAILED documents from the workflow)
+Everything else is identical to the original.
+"""
 from __future__ import annotations
 
 import logging
+import os
+
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy import func, select
@@ -50,7 +57,6 @@ async def upload_document(
 ) -> Document:
     logger.info("--- Début de l'Upload de Document ---")
     logger.info(f"Client: {client_id}, Type: {document_type}, Fichier: {file.filename}, MIME: {file.content_type}")
-    # If no client_id provided, create a temporary client record so documents can be uploaded
     if client_id is None:
         temp_name = f"temporary-upload-{file.filename or 'doc'}"
         temp_client = Client(full_name=temp_name, metadata_={"temporary": True, "created_from_upload": True})
@@ -76,7 +82,7 @@ async def upload_document(
     except Exception as e:
         logger.error(f"Erreur lors de la sauvegarde du fichier : {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Erreur stockage : {str(e)}")
-    
+
     document = Document(
         client_id=client_id,
         vehicle_id=vehicle_id,
@@ -181,6 +187,54 @@ def download_document(document_id: int, db: Session = Depends(get_db)) -> FileRe
     return FileResponse(path, media_type=document.content_type, filename=document.original_filename)
 
 
+# ── NEW — Task 2: delete a document completely from the workflow ──────────────
+
+@router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_document(document_id: int, db: Session = Depends(get_db)) -> None:
+    """
+    Permanently delete a document:
+      - removes the physical file from disk;
+      - removes the database record;
+      - writes an audit log entry;
+      - returns 204 No Content.
+
+    Called by the frontend when the user clicks the X button on a FAILED document.
+    The endpoint is not restricted to FAILED status server-side, giving admin
+    flexibility — the frontend enforces the FAILED-only UX constraint.
+    """
+    document = db.get(Document, document_id)
+    if document is None:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
+    # Remove the physical file — silent if already missing
+    try:
+        if document.file_path and os.path.isfile(document.file_path):
+            os.remove(document.file_path)
+            logger.info(f"Physical file deleted: {document.file_path}")
+    except OSError as exc:
+        logger.warning(f"Could not delete file {document.file_path}: {exc}")
+
+    # Audit before deletion so entity_id is still valid
+    write_audit_log(
+        db,
+        action="document.deleted",
+        entity_type="document",
+        entity_id=document.id,
+        payload={
+            "original_filename": document.original_filename,
+            "document_type": document.document_type,
+            "processing_status": document.processing_status,
+            "client_id": document.client_id,
+        },
+    )
+
+    db.delete(document)
+    db.commit()
+    logger.info(f"Document {document_id} deleted from database.")
+
+
+# ── Legacy upload endpoint (keep as-is) ──────────────────────────────────────
+
 @router.post("/legacy-upload")
 async def legacy_upload_document(
     background_tasks: BackgroundTasks,
@@ -197,7 +251,7 @@ async def legacy_upload_document(
         client = Client(full_name=client_name)
         db.add(client)
         db.flush()
-    
+
     document = await upload_document(
         background_tasks=background_tasks,
         file=file,

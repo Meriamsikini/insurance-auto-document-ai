@@ -21,15 +21,33 @@ class EmployeeRead(BaseModel):
     email: EmailStr
     full_name: str
     department: str | None = None
+    phone: str | None = None
+    avatar_url: str | None = None
+    theme: str | None = "dark"
     is_active: bool
     is_admin: bool
 
     class Config:
         from_attributes = True
 
+class EmployeeUpdate(BaseModel):
+    full_name: str | None = None
+    phone: str | None = None
+    department: str | None = None
+    theme: str | None = None
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str
+    employee: EmployeeRead
 
 class TokenData(BaseModel):
     email: str | None = None
@@ -108,7 +126,7 @@ def get_current_active_employee(current_user: Employee = Depends(get_current_emp
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=LoginResponse)
 def login_for_access_token(
     db: Session = Depends(get_db),
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -126,4 +144,48 @@ def login_for_access_token(
         )
     access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
     access_token = create_access_token(subject=employee.email, expires_delta=access_token_expires)
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "employee": employee}
+
+
+@router.get("/me", response_model=EmployeeRead)
+def read_users_me(current_user: Employee = Depends(get_current_active_employee)):
+    """
+    Get current logged in user.
+    """
+    return current_user
+
+
+@router.patch("/me", response_model=EmployeeRead)
+def update_me(
+    payload: EmployeeUpdate,
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(get_current_active_employee),
+) -> Employee:
+    """
+    Update current user's profile information.
+    """
+    update_data = payload.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(current_user, field, value)
+
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
+def change_password(
+    payload: PasswordChange,
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(get_current_active_employee),
+) -> None:
+    """
+    Change current user's password.
+    """
+    if not current_user.hashed_password or not verify_password(payload.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect current password")
+
+    current_user.hashed_password = pwd_context.hash(payload.new_password)
+    db.add(current_user)
+    db.commit()

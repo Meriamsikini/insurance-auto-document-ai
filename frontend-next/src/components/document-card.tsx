@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import type { UseFormRegister } from "react-hook-form";
-import { CheckCircle2, Circle, Loader2, RotateCcw, Sparkles } from "lucide-react";
+import { CheckCircle2, Circle, Loader2, RotateCcw, Sparkles, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import type { CardDef } from "@/lib/document-schema";
 import type { DocumentItem } from "@/lib/api";
@@ -17,11 +18,13 @@ function docStatusTone(status: string): "green" | "amber" | "red" | "blue" {
 /**
  * DocumentCard — display + edit surface for one document type.
  *
- * Task 5: Added "Restaurer" button in the card header.
- * - Clears all form fields belonging to this card.
- * - Does NOT delete the uploaded file.
- * - Does NOT re-trigger OCR.
- * - Allows fresh manual entry.
+ * Task 5: "Restaurer" button — clears card fields without deleting the file or re-running OCR.
+ *
+ * Task 2 (new): Delete button (XCircle) on FAILED documents only.
+ *   - Visible only when processing_status === "FAILED".
+ *   - Calls onDeleteDocument(doc) → backend DELETE + store/OCR cleanup in parent.
+ *   - Row fades out smoothly; no page reload needed.
+ *   - Red hover colour, pointer cursor, subtle scale animation.
  */
 export function DocumentCard({
   def,
@@ -30,24 +33,52 @@ export function DocumentCard({
   matchedDocuments,
   ocrExtracted,
   onDownload,
+  onDeleteDocument,
 }: {
   def: CardDef;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   register: UseFormRegister<any>;
-  /** Task 5: callback to reset the fields belonging to this card */
+  /** Task 5: reset all form fields of this card */
   resetFields: (fieldNames: string[]) => void;
   matchedDocuments: DocumentItem[];
   ocrExtracted: boolean;
   onDownload: (document: DocumentItem) => void;
+  /** Task 2: delete a FAILED document from the workflow entirely */
+  onDeleteDocument?: (document: DocumentItem) => Promise<void>;
 }) {
   const Icon = def.icon;
   const provided = !def.documentType || matchedDocuments.length > 0;
 
-  // Task 5: Collect all field names for this card and reset them
+  // IDs currently being deleted (show spinner)
+  const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
+  // IDs whose deletion succeeded (trigger CSS fade-out before parent re-renders)
+  const [deletedIds, setDeletedIds] = useState<Set<number>>(new Set());
+
+  // Task 5 — restore
   function handleRestore() {
-    const names = def.fields.map((f) => f.name);
-    resetFields(names);
+    resetFields(def.fields.map((f) => f.name));
     toast.info(`Carte « ${def.title} » réinitialisée. Vous pouvez saisir de nouvelles données.`);
+  }
+
+  // Task 2 — delete FAILED document
+  async function handleDelete(e: React.MouseEvent, document: DocumentItem) {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!onDeleteDocument) return;
+
+    setDeletingIds((prev) => new Set(prev).add(document.id));
+    try {
+      await onDeleteDocument(document);
+      // Trigger fade-out; parent will remove it from the list after invalidation
+      setDeletedIds((prev) => new Set(prev).add(document.id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur lors de la suppression.");
+      setDeletingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(document.id);
+        return next;
+      });
+    }
   }
 
   return (
@@ -72,15 +103,14 @@ export function DocumentCard({
           </div>
         </div>
 
-        {/* Right side: status badge + restore button */}
+        {/* Status badge + Restore button */}
         <div className="flex shrink-0 items-center gap-2">
           {def.documentType && (
             <Badge tone={provided ? "green" : "amber"}>
               {provided ? "Fourni" : "Manquant"}
             </Badge>
           )}
-
-          {/* Task 5: Restore button */}
+          {/* Task 5 */}
           <button
             type="button"
             onClick={handleRestore}
@@ -102,31 +132,17 @@ export function DocumentCard({
             full={field.full}
           >
             {field.type === "select" ? (
-              <Select
-                {...register(field.name)}
-                defaultValue=""
-                required={field.required}
-              >
+              <Select {...register(field.name)} defaultValue="" required={field.required}>
                 <option value="">-</option>
                 {field.options?.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
+                  <option key={option} value={option}>{option}</option>
                 ))}
               </Select>
             ) : field.type === "textarea" ? (
-              <Textarea
-                {...register(field.name)}
-                readOnly={field.readOnly}
-                required={field.required}
-              />
+              <Textarea {...register(field.name)} readOnly={field.readOnly} required={field.required} />
             ) : (
               <Input
-                type={
-                  field.type === "date" || field.type === "month" || field.type === "number"
-                    ? field.type
-                    : "text"
-                }
+                type={field.type === "date" || field.type === "month" || field.type === "number" ? field.type : "text"}
                 placeholder={field.placeholder}
                 readOnly={field.readOnly}
                 required={field.required}
@@ -138,7 +154,7 @@ export function DocumentCard({
         ))}
       </div>
 
-      {/* ── Linked documents ── */}
+      {/* ── Linked documents list ── */}
       {def.documentType && (
         <div className="border-t border-line bg-surface2/50 px-4 py-3">
           {matchedDocuments.length === 0 ? (
@@ -147,24 +163,82 @@ export function DocumentCard({
             </div>
           ) : (
             <div className="flex flex-col gap-1.5">
-              {matchedDocuments.map((document) => (
-                <button
-                  key={document.id}
-                  onClick={() => onDownload(document)}
-                  className="flex items-center justify-between gap-2 rounded-lg px-1.5 py-1 text-left text-xs transition hover:bg-surface3"
-                >
-                  <span className="flex min-w-0 items-center gap-1.5 text-ink2">
-                    <CheckCircle2 size={13} className="shrink-0 text-emerald-400" />
-                    <span className="truncate font-semibold">{document.original_filename}</span>
-                  </span>
-                  <Badge tone={docStatusTone(document.processing_status)}>
-                    {document.processing_status === "PROCESSING" && (
-                      <Loader2 size={10} className="animate-spin" />
+              {matchedDocuments.map((document) => {
+                const isFailed   = document.processing_status === "FAILED";
+                const isDeleting = deletingIds.has(document.id);
+                const isDeleted  = deletedIds.has(document.id);
+
+                return (
+                  <div
+                    key={document.id}
+                    style={{ transition: "opacity 300ms ease, transform 300ms ease" }}
+                    className={[
+                      "flex items-center gap-2 rounded-lg px-1.5 py-1 text-xs",
+                      isDeleted
+                        ? "pointer-events-none -translate-y-1 opacity-0"
+                        : "translate-y-0 opacity-100",
+                    ].join(" ")}
+                  >
+                    {/* Filename + download trigger (disabled for FAILED) */}
+                    <button
+                      type="button"
+                      onClick={() => !isFailed && onDownload(document)}
+                      disabled={isFailed}
+                      className={[
+                        "flex min-w-0 flex-1 items-center gap-1.5 rounded px-1 py-0.5 text-left transition",
+                        isFailed ? "cursor-default" : "hover:bg-surface3",
+                      ].join(" ")}
+                    >
+                      {isFailed ? (
+                        <XCircle size={13} className="shrink-0 text-rose-400" />
+                      ) : (
+                        <CheckCircle2 size={13} className="shrink-0 text-emerald-400" />
+                      )}
+                      <span
+                        className={[
+                          "truncate font-semibold",
+                          isFailed ? "text-ink3 line-through decoration-rose-400/60" : "text-ink2",
+                        ].join(" ")}
+                      >
+                        {document.original_filename}
+                      </span>
+                    </button>
+
+                    {/* Status badge */}
+                    <Badge tone={docStatusTone(document.processing_status)}>
+                      {document.processing_status === "PROCESSING" && (
+                        <Loader2 size={10} className="animate-spin" />
+                      )}
+                      {document.processing_status}
+                    </Badge>
+
+                    {/* ── Task 2: X delete button — FAILED rows only ── */}
+                    {isFailed && onDeleteDocument && (
+                      <button
+                        type="button"
+                        disabled={isDeleting}
+                        onClick={(e) => handleDelete(e, document)}
+                        title="Supprimer ce document du workflow"
+                        className={[
+                          "group ml-0.5 grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-md border transition-all duration-150",
+                          isDeleting
+                            ? "border-rose-500/30 bg-rose-500/10 text-rose-400"
+                            : "border-transparent text-ink3 hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-400",
+                        ].join(" ")}
+                      >
+                        {isDeleting ? (
+                          <Loader2 size={12} className="animate-spin text-rose-400" />
+                        ) : (
+                          <XCircle
+                            size={13}
+                            className="transition-transform duration-150 group-hover:scale-110"
+                          />
+                        )}
+                      </button>
                     )}
-                    {document.processing_status}
-                  </Badge>
-                </button>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

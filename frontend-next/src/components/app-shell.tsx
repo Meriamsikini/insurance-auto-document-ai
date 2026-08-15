@@ -176,25 +176,6 @@ export function AppShell({
           <MiniStat label="Sinis." value={stats.claims} />
         </div>
 
-        {/* Employee info in sidebar */}
-        {employee && (
-          <button
-            onClick={() => router.push("/profile")}
-            className={cn(
-              "mb-3 flex items-center gap-2 rounded-xl border border-line bg-surface2/50 p-3 text-left transition hover:border-brand-400 hover:bg-surface2",
-              isSidebarExpanded ? "mx-3" : "mx-auto w-14 justify-center",
-            )}
-          >
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-brand-500 to-sky-400 text-xs font-extrabold text-white">
-              {initials}
-            </span>
-            <div className={cn("min-w-0", isSidebarExpanded ? "opacity-100" : "pointer-events-none hidden opacity-0")}>
-              <p className="truncate text-xs font-bold text-ink">{employee.full_name}</p>
-              <p className="truncate text-[10px] text-ink3">{employee.department ?? employee.email}</p>
-            </div>
-          </button>
-        )}
-
         <div className={cn("border-t border-line py-4 text-[11px] text-ink3 transition-all", isSidebarExpanded ? "px-5" : "px-2 text-center")}>
           {isSidebarExpanded ? "AssurAuto Pro · v2.0" : "v2.0"}
         </div>
