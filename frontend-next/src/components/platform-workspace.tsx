@@ -8,7 +8,7 @@
 
 import { useEffect, useMemo, useCallback, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronRight, FileStack, Plus, Save, Search, Trash2, User } from "lucide-react";
+import { ChevronDown, ChevronRight, FileStack, Plus, Save, Search, Trash2, User } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
@@ -140,6 +140,7 @@ export default function PlatformWorkspace({ initialView, initialTab = "client" }
     activeClientId, activeVehicleId, activeClaimId,
     tab, pendingDocs, ocr,
     setActive, setTab, setPendingDocs, setOcr,
+    expandedClients, expandedVehicles, expandedClaims, toggleExpanded,
   } = usePlatformStore();
 
   const view = initialView;
@@ -165,6 +166,21 @@ export default function PlatformWorkspace({ initialView, initialTab = "client" }
   const vehicleForm = useForm<VehicleForm>();
   const claimForm = useForm<ClaimForm>({ defaultValues: { claim_number: nextClaimNumber(), garage_tva: "20" } });
   const lastAiAppliedAtRef = useRef<number | null>(null);
+
+  function handleClientClick(client: Client) {
+    toggleExpanded("clients", client.id);
+    pickClient(client);
+  }
+
+  function handleVehicleClick(vehicle: Vehicle) {
+    toggleExpanded("vehicles", vehicle.id);
+    pickVehicle(vehicle);
+  }
+
+  function handleClaimClick(claim: Claim) {
+    toggleExpanded("claims", claim.id);
+    pickClaim(claim);
+  }
 
   const handleRefresh = useCallback(async () => {
     await Promise.all([
@@ -732,40 +748,50 @@ export default function PlatformWorkspace({ initialView, initialTab = "client" }
                     <div className="flex flex-col gap-2">
                       {isLoading && <div className="p-4 text-sm text-ink3">Chargement...</div>}
                       {!isLoading && filteredClients.length === 0 && <EmptyState icon={User} title="Aucun dossier" description="Créez votre premier client pour démarrer." />}
-                      {filteredClients.map((client) => (
+                      {filteredClients.map((client) => {
+                        const isClientExpanded = expandedClients.includes(client.id);
+                        return (
                         <div key={client.id} className="overflow-hidden rounded-xl border border-line bg-surface2/40">
-                          <button className={`flex w-full items-start gap-3 p-3 text-left transition hover:bg-brand-500/10 ${client.id === activeClientId ? "bg-brand-500/10" : ""}`} onClick={() => pickClient(client)}>
+                          <button className={`flex w-full items-start gap-2.5 p-3 text-left transition hover:bg-brand-500/10 ${client.id === activeClientId ? "bg-brand-500/10" : ""}`} onClick={() => handleClientClick(client)}>
+                            {isClientExpanded ? <ChevronDown size={16} className="mt-1 shrink-0 text-ink3" /> : <ChevronRight size={16} className="mt-1 shrink-0 text-ink3" />}
                             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-xs font-extrabold text-white">{initials(client.full_name)}</span>
                             <span className="min-w-0">
                               <b className={`block truncate text-sm ${client.id === activeClientId ? "text-brand-300" : "text-ink"}`}>{client.full_name}</b>
                               <span className="text-xs text-ink3">{client.cin_number || "Sans CIN"} · {vehiclesOf(client.id).length} véhicule(s)</span>
                             </span>
                           </button>
-                          <div className="border-t border-line bg-surface2/40 p-2">
-                            {vehiclesOf(client.id).map((vehicle) => (
+                          {isClientExpanded && <div className="border-t border-line bg-surface2/40 p-2">
+                            {vehiclesOf(client.id).map((vehicle) => {
+                              const isVehicleExpanded = expandedVehicles.includes(vehicle.id);
+                              return (
                               <div key={vehicle.id}>
-                                <button className={`flex w-full items-start gap-2 rounded-lg p-2 text-left text-sm hover:bg-surface3 ${vehicle.id === activeVehicleId ? "bg-surface3 text-brand-300" : "text-ink2"}`} onClick={() => pickVehicle(vehicle)}>
-                                  <ChevronRight size={14} className="mt-0.5 shrink-0" />
+                                <button className={`flex w-full items-start gap-2 rounded-lg p-2 text-left text-sm hover:bg-surface3 ${vehicle.id === activeVehicleId ? "bg-surface3 text-brand-300" : "text-ink2"}`} onClick={() => handleVehicleClick(vehicle)}>
+                                  {isVehicleExpanded ? <ChevronDown size={14} className="mt-0.5 shrink-0" /> : <ChevronRight size={14} className="mt-0.5 shrink-0" />}
                                   <span className="min-w-0">
                                     <b className="block truncate">{vehicle.registration_number || "Sans plaque"}</b>
                                     <span className="text-xs text-ink3">{[vehicle.make, vehicle.model].filter(Boolean).join(" ") || "Modèle non renseigné"}</span>
                                   </span>
                                 </button>
-                                {claimsOf(vehicle.id).map((claim) => (
-                                  <button key={claim.id} className={`ml-6 flex w-[calc(100%-1.5rem)] items-start gap-2 rounded-lg p-2 text-left text-sm hover:bg-surface3 ${claim.id === activeClaimId ? "bg-surface3 text-brand-300" : "text-ink2"}`} onClick={() => pickClaim(claim)}>
-                                    <ChevronRight size={13} className="mt-0.5 shrink-0" />
-                                    <span className="min-w-0">
-                                      <b className="block truncate">{claim.claim_number}</b>
-                                      <span className="text-xs text-ink3">{claim.accident_date || "Date inconnue"}</span>
-                                    </span>
-                                  </button>
-                                ))}
+                                {isVehicleExpanded && claimsOf(vehicle.id).map((claim) => {
+                                  const isClaimExpanded = expandedClaims.includes(claim.id);
+                                  return (
+                                    <button key={claim.id} className={`ml-6 flex w-[calc(100%-1.5rem)] items-start gap-2 rounded-lg p-2 text-left text-sm hover:bg-surface3 ${claim.id === activeClaimId ? "bg-surface3 text-brand-300" : "text-ink2"}`} onClick={() => handleClaimClick(claim)}>
+                                      {isClaimExpanded ? <ChevronDown size={13} className="mt-0.5 shrink-0" /> : <ChevronRight size={13} className="mt-0.5 shrink-0" />}
+                                      <span className="min-w-0">
+                                        <b className="block truncate">{claim.claim_number}</b>
+                                        <span className="text-xs text-ink3">{claim.accident_date || "Date inconnue"}</span>
+                                      </span>
+                                    </button>
+                                  );
+                                })}
                               </div>
-                            ))}
+                              );
+                            })}
                             {vehiclesOf(client.id).length === 0 && <div className="p-2 text-sm text-ink3">Aucun véhicule</div>}
-                          </div>
+                          </div>}
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </PanelBody>
                 </Panel>

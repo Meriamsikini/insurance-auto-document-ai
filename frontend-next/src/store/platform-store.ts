@@ -16,12 +16,16 @@ type PlatformState = {
   activeClientId: number | null;
   activeVehicleId: number | null;
   activeClaimId: number | null;
+  expandedClients: number[];
+  expandedVehicles: number[];
+  expandedClaims: number[];
   pendingDocs: PendingDoc[];
   ocr: Record<string, unknown>;
   tab: Tab;
   /** Task 2 / workspace sidebar search */
   search: string;
   setActive: (ids: Partial<Pick<PlatformState, "activeClientId" | "activeVehicleId" | "activeClaimId">>) => void;
+  toggleExpanded: (kind: "clients" | "vehicles" | "claims", id: number) => void;
   setTab: (tab: Tab) => void;
   setPendingDocs: (docs: PendingDoc[]) => void;
   setOcr: (ocr: Record<string, unknown>) => void;
@@ -62,6 +66,9 @@ export const usePlatformStore = create<PlatformState>((set, get) => ({
   activeClientId: readNumber("assurauto_client_id"),
   activeVehicleId: readNumber("assurauto_vehicle_id"),
   activeClaimId: readNumber("assurauto_claim_id"),
+  expandedClients: readJson("assurauto_expanded_clients", []),
+  expandedVehicles: readJson("assurauto_expanded_vehicles", []),
+  expandedClaims: readJson("assurauto_expanded_claims", []),
   pendingDocs: readJson("assurauto_pending_docs", []),
   ocr: readJson("assurauto_ocr_cache", {}),
   tab: "client",
@@ -70,6 +77,13 @@ export const usePlatformStore = create<PlatformState>((set, get) => ({
   setActive: (ids) => {
     set(ids);
     persistSelection(get());
+  },
+  toggleExpanded: (kind, id) => {
+    const key = kind === "clients" ? "expandedClients" : kind === "vehicles" ? "expandedVehicles" : "expandedClaims";
+    const current = get()[key];
+    const expanded = current.includes(id) ? current.filter((item) => item !== id) : [...current, id];
+    set({ [key]: expanded });
+    sessionStorage.setItem(`assurauto_${kind === "clients" ? "expanded_clients" : kind === "vehicles" ? "expanded_vehicles" : "expanded_claims"}`, JSON.stringify(expanded));
   },
   setTab: (tab) => set({ tab }),
   setPendingDocs: (pendingDocs) => {

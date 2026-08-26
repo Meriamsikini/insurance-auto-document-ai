@@ -8,7 +8,7 @@ import { Badge, Button, EmptyState, Panel, PanelBody, PanelHead, SegmentedTabs }
 import { DocumentCard } from "@/components/document-card";
 import { DocUploadChip, type ChipTone } from "@/components/upload-dropzone";
 import { cardsFor, matchDocuments, type CardDef } from "@/lib/document-schema";
-import type { Client, Vehicle } from "@/lib/api";
+import type { Claim, Client, Vehicle } from "@/lib/api";
 
 type Tab = "client" | "vehicle" | "claim";
 type JsonRecord = Record<string, unknown>;
@@ -141,27 +141,47 @@ export function WorkspaceView() {
     exportClaimReport,
   } = usePlatform();
 
-  const [openClient, setOpenClient] = useState<number | null>(null);
-  const [openVehicle, setOpenVehicle] = useState<number | null>(null);
-
-  useEffect(() => {
-    setOpenClient(activeClientId);
-  }, [activeClientId]);
-
-  useEffect(() => {
-    setOpenVehicle(activeVehicleId);
-  }, [activeVehicleId]);
+  const [expandedClients, setExpandedClients] = useState<Set<number>>(new Set());
+  const [expandedVehicles, setExpandedVehicles] = useState<Set<number>>(new Set());
+  const [expandedClaims, setExpandedClaims] = useState<Set<number>>(new Set());
 
   const handleClientClick = (client: Client) => {
-    const isOpening = openClient !== client.id;
-    setOpenClient(isOpening ? client.id : null);
-    if (isOpening) pickClient(client);
+    setExpandedClients((prev) => {
+      const next = new Set(prev);
+      if (next.has(client.id)) {
+        next.delete(client.id);
+      } else {
+        next.add(client.id);
+      }
+      return next;
+    });
+    pickClient(client);
   };
 
   const handleVehicleClick = (vehicle: Vehicle) => {
-    const isOpening = openVehicle !== vehicle.id;
-    setOpenVehicle(isOpening ? vehicle.id : null);
-    if (isOpening) pickVehicle(vehicle);
+    setExpandedVehicles((prev) => {
+      const next = new Set(prev);
+      if (next.has(vehicle.id)) {
+        next.delete(vehicle.id);
+      } else {
+        next.add(vehicle.id);
+      }
+      return next;
+    });
+    pickVehicle(vehicle);
+  };
+
+  const handleClaimClick = (claim: Claim) => {
+    setExpandedClaims((prev) => {
+      const next = new Set(prev);
+      if (next.has(claim.id)) {
+        next.delete(claim.id);
+      } else {
+        next.add(claim.id);
+      }
+      return next;
+    });
+    pickClaim(claim);
   };
 
   return (
@@ -198,7 +218,7 @@ export function WorkspaceView() {
               {isLoading && <div className="flex items-center gap-2 rounded-lg border border-dashed border-line p-4 text-sm text-ink3">Chargement...</div>}
               {!isLoading && filteredClients.length === 0 && <EmptyState icon={User} title="Aucun dossier" description="Creez votre premier client pour demarrer." />}
               {filteredClients.map((client) => {
-                const isClientOpen = openClient === client.id;
+                const isClientOpen = expandedClients.has(client.id);
                 return (
                   <div key={client.id} className="overflow-hidden rounded-xl border border-line bg-surface2/40">
                     <button
@@ -219,7 +239,7 @@ export function WorkspaceView() {
                     {isClientOpen && (
                       <div className="border-t border-line bg-surface2/40 p-2">
                         {vehiclesOf(client.id).map((vehicle) => {
-                          const isVehicleOpen = openVehicle === vehicle.id;
+                          const isVehicleOpen = expandedVehicles.has(vehicle.id);
                           return (
                             <div key={vehicle.id}>
                               <button
@@ -233,19 +253,22 @@ export function WorkspaceView() {
                                 </span>
                               </button>
                               {isVehicleOpen &&
-                                claimsOf(vehicle.id).map((claim) => (
-                                  <button
-                                    key={claim.id}
-                                    className={`ml-6 flex w-[calc(100%-1.5rem)] items-start gap-1.5 rounded-lg p-1.5 text-left text-sm hover:bg-surface3 ${claim.id === activeClaimId ? "bg-surface3 text-brand-300" : "text-ink2"}`}
-                                    onClick={() => pickClaim(claim)}
-                                  >
-                                    <ChevronRight size={13} className="mt-0.5 shrink-0" />
-                                    <span className="min-w-0">
-                                      <b className="block truncate">{claim.claim_number}</b>
-                                      <span className="text-xs text-ink3">{claim.accident_date || "Date inconnue"}</span>
-                                    </span>
-                                  </button>
-                                ))}
+                                claimsOf(vehicle.id).map((claim) => {
+                                  const isClaimOpen = expandedClaims.has(claim.id);
+                                  return (
+                                    <button
+                                      key={claim.id}
+                                      className={`ml-6 flex w-[calc(100%-1.5rem)] items-start gap-1.5 rounded-lg p-1.5 text-left text-sm hover:bg-surface3 ${claim.id === activeClaimId ? "bg-surface3 text-brand-300" : "text-ink2"}`}
+                                      onClick={() => handleClaimClick(claim)}
+                                    >
+                                      {isClaimOpen ? <ChevronDown size={13} className="mt-0.5 shrink-0" /> : <ChevronRight size={13} className="mt-0.5 shrink-0" />}
+                                      <span className="min-w-0">
+                                        <b className="block truncate">{claim.claim_number}</b>
+                                        <span className="text-xs text-ink3">{claim.accident_date || "Date inconnue"}</span>
+                                      </span>
+                                    </button>
+                                  );
+                                })}
                             </div>
                           );
                         })}
