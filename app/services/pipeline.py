@@ -11,7 +11,25 @@ from app.services.ocr_mistral import MistralOCRService, OCRPage
 from app.services.opencv_preprocessing import preprocess_accident_image
 
 
-HANDWRITTEN_DIRECT_TYPES = {"constat", "pv", "rapport_police", "police_report"}
+HANDWRITTEN_DIRECT_TYPES = {"constat", "pv", "rapport_police", "police_report", "expertise"}
+DIRECT_IMAGE_TYPES = {
+    "permis",
+    "cg",
+    "carte_grise",
+    "ct",
+    "att",
+    "attestation",
+    "facture",
+    "facture_achat",
+    "facture_reparation",
+    "facture_garage",
+    "repair_invoice",
+    "devis",
+    "invoice",
+    "cin",
+    "domicile",
+    "proof_of_residence",
+}
 ACCIDENT_PHOTO_TYPES = {"accident", "accidents", "accident_photo", "accident_photos", "photos", "sinistre_photo"}
 
 def clean_text(value: str) -> str:
@@ -76,7 +94,7 @@ def process_uploaded_document(document: Document) -> tuple[str | None, dict[str,
             gemini.extract_from_image(image_bytes=processed, mime_type="image/jpeg", document_type=frontend_type)
         )
 
-    if frontend_type in HANDWRITTEN_DIRECT_TYPES:
+    if frontend_type in HANDWRITTEN_DIRECT_TYPES or frontend_type in DIRECT_IMAGE_TYPES:
         return None, normalize_payload(
             gemini.extract_from_image(
                 image_bytes=path.read_bytes(),

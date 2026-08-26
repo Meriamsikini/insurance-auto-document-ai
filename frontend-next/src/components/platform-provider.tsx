@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, ReactNode, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
 import { useForm, UseFormReturn } from "react-hook-form";
@@ -138,6 +138,14 @@ function rawValue(raw: JsonRecord, ...keys: string[]) {
   return "";
 }
 
+function normalizeOuiNon(value: string): "" | "Oui" | "Non" {
+  const v = value.toLowerCase().trim();
+  if (!v) return "";
+  if (/(^|\b)(oui|yes|true|present|présent|avec croquis)(\b|$)/.test(v)) return "Oui";
+  if (/(^|\b)(non|no|false|absent|sans croquis)(\b|$)/.test(v)) return "Non";
+  return "";
+}
+
 function isoDate(value?: string) {
   if (!value) return "";
   if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value.slice(0, 10);
@@ -233,6 +241,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   const clientForm = useForm<ClientForm>({ defaultValues: { client_type: "individual" } });
   const vehicleForm = useForm<VehicleForm>();
   const claimForm = useForm<ClaimForm>({ defaultValues: { claim_number: nextClaimNumber(), garage_tva: "20" } });
+  const lastAiAppliedAtRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!data) return;
@@ -255,10 +264,10 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       expiration_date: valueOf(cin, "cin_expiration"),
       cin_address: valueOf(cin, "cin_address") || activeClient?.address || "",
       city: valueOf(cin, "city"),
-      domicile_address: valueOf(domicile, "domicile_address") || activeClient?.address || "",
-      domicile_type: valueOf(domicile, "domicile_type"),
-      domicile_issuer: valueOf(domicile, "domicile_issuer"),
-      domicile_date: valueOf(domicile, "domicile_date"),
+      domicile_address: valueOf(domicile, "domicile_address") || valueOf(domicile, "address") || activeClient?.address || "",
+      domicile_type: valueOf(domicile, "domicile_type") || valueOf(domicile, "type_document") || "",
+      domicile_issuer: valueOf(domicile, "domicile_issuer") || valueOf(domicile, "issuer") || "",
+      domicile_date: valueOf(domicile, "domicile_date") || valueOf(domicile, "date") || "",
       phone: activeClient?.phone ?? "",
       email: activeClient?.email ?? "",
       profession: valueOf(comp, "profession"),
@@ -315,36 +324,89 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
   }, [activeVehicle, vehicleForm]);
 
   useEffect(() => {
-    const constat = subMeta(activeClaim?.metadata, "constat");
-    const pv = subMeta(activeClaim?.metadata, "pv");
-    const garage = subMeta(activeClaim?.metadata, "garage");
-    const photos = subMeta(activeClaim?.metadata, "photos");
-    claimForm.reset({
-      claim_number: activeClaim?.claim_number ?? nextClaimNumber(),
-      accident_date: activeClaim?.accident_date ?? "",
-      location: activeClaim?.location ?? "",
-      description: activeClaim?.description ?? "",
-      constat_heure: valueOf(constat, "heure"),
-      constat_conducteur_a: valueOf(constat, "conducteur_a"),
-      constat_conducteur_b: valueOf(constat, "conducteur_b"),
-      constat_assureur_a: valueOf(constat, "assureur_a"),
-      constat_assureur_b: valueOf(constat, "assureur_b"),
-      constat_croquis: valueOf(constat, "croquis"),
-      pv_numero: valueOf(pv, "numero"),
-      pv_responsabilite: valueOf(pv, "responsabilite"),
-      pv_parties: valueOf(pv, "parties"),
-      pv_expert_nom: valueOf(pv, "expert_nom"),
-      pv_expertise_date: valueOf(pv, "expertise_date"),
-      pv_cout_estime: valueOf(pv, "cout_estime"),
-      pv_infractions: valueOf(pv, "infractions"),
-      photos_commentaire: valueOf(photos, "commentaire"),
-      garage_nom: valueOf(garage, "nom"),
-      garage_cout_ht: valueOf(garage, "cout_ht"),
-      garage_tva: valueOf(garage, "tva") || "20",
-      garage_cout_ttc: valueOf(garage, "cout_ttc"),
-      garage_pieces: valueOf(garage, "pieces"),
+    const claimMetadata = ((activeClaim?.metadata as JsonRecord) || {}) as JsonRecord;
+    const metadataConstat = subMeta(claimMetadata, "constat");
+    const metadataPv = subMeta(claimMetadata, "pv");
+    const metadataGarage = subMeta(claimMetadata, "garage");
+    const metadataPhotos = subMeta(claimMetadata, "photos");
+
+    const persistedValues = {
+      accident_date: (activeClaim?.accident_date ?? valueOf(metadataConstat, "date_accident")) || isoDate(rawValue(({} as JsonRecord), "date accident", "date_accident", "date")),
+      location: (activeClaim?.location ?? valueOf(metadataConstat, "lieu")) || rawValue(({} as JsonRecord), "lieu", "location"),
+      description:
+        (activeClaim?.description ??
+          String(valueOf(metadataConstat, "description") || valueOf(metadataConstat, "accident_summary") || "").trim()) ||
+        "",
+      constat_heure: valueOf(metadataConstat, "heure"),
+      constat_conducteur_a: valueOf(metadataConstat, "conducteur_a"),
+      constat_conducteur_b: valueOf(metadataConstat, "conducteur_b"),
+      constat_assureur_a: valueOf(metadataConstat, "assureur_a"),
+      constat_assureur_b: valueOf(metadataConstat, "assureur_b"),
+      constat_croquis: valueOf(metadataConstat, "croquis"),
+      pv_numero: valueOf(metadataPv, "numero"),
+      pv_responsabilite: valueOf(metadataPv, "responsabilite"),
+      pv_parties: valueOf(metadataPv, "parties"),
+      pv_expert_nom: valueOf(metadataPv, "expert_nom"),
+      pv_expertise_date: valueOf(metadataPv, "expertise_date"),
+      pv_cout_estime: valueOf(metadataPv, "cout_estime"),
+      pv_infractions: valueOf(metadataPv, "infractions"),
+      photos_commentaire: valueOf(metadataPhotos, "commentaire") || String(claimMetadata.accident_summary || "").trim(),
+      garage_nom: valueOf(metadataGarage, "nom"),
+      garage_cout_ht: valueOf(metadataGarage, "cout_ht"),
+      garage_tva: valueOf(metadataGarage, "tva") || "20",
+      garage_cout_ttc: valueOf(metadataGarage, "cout_ttc"),
+      garage_pieces: valueOf(metadataGarage, "pieces"),
+    };
+
+    const ocrClaim = ((ocr.claim as JsonRecord) || {}) as JsonRecord;
+    const ocrEntries = Object.values(ocrClaim).filter((entry): entry is JsonRecord => !!entry && typeof entry === "object");
+    const constatAi = ocrEntries.find((entry) => {
+      const raw = ((entry.raw_fields as JsonRecord) || entry) as JsonRecord;
+      const docType = String(entry.document_type || "").toLowerCase();
+      return docType === "constat" || Object.keys(raw).some((key) => ["heure","conducteur_a","conducteur_b","assureur_a","assureur_b","croquis"].includes(key.toLowerCase()));
     });
-  }, [activeClaim, claimForm]);
+    const photoAi = ocrEntries.find((entry) => {
+      const raw = ((entry.raw_fields as JsonRecord) || entry) as JsonRecord;
+      const docType = String(entry.document_type || "").toLowerCase();
+      return docType.includes("photo") || Object.keys(raw).some((key) => ["commentaire","description","accident_summary","circonstances"].includes(key.toLowerCase()));
+    });
+    const constatRaw = ((constatAi?.raw_fields as JsonRecord) || constatAi || {}) as JsonRecord;
+    const photoRaw = ((photoAi?.raw_fields as JsonRecord) || photoAi || {}) as JsonRecord;
+
+    const hydrated = {
+      claim_number: activeClaim?.claim_number ?? nextClaimNumber(),
+      accident_date:
+        persistedValues.accident_date ||
+        (activeClaim?.accident_date ?? isoDate(rawValue(constatRaw, "date accident", "date_accident", "date"))),
+      location:
+        persistedValues.location ||
+        (activeClaim?.location ?? rawValue(constatRaw, "lieu", "location")),
+      description:
+        persistedValues.description ||
+        String(rawValue(constatRaw, "description", "accident_summary", "circonstances") || constatAi?.accident_summary || ""),
+      constat_heure: persistedValues.constat_heure || rawValue(constatRaw, "heure", "heure accident", "heure_accident", "time"),
+      constat_conducteur_a: persistedValues.constat_conducteur_a || rawValue(constatRaw, "conducteur_a", "conducteur a", "vehicule a", "vehicule_a"),
+      constat_conducteur_b: persistedValues.constat_conducteur_b || rawValue(constatRaw, "conducteur_b", "conducteur b", "vehicule b", "vehicule_b"),
+      constat_assureur_a: persistedValues.constat_assureur_a || rawValue(constatRaw, "assureur_a", "assureur a", "compagnie a", "compagnie assurance a"),
+      constat_assureur_b: persistedValues.constat_assureur_b || rawValue(constatRaw, "assureur_b", "assureur b", "compagnie b", "compagnie assurance b"),
+      constat_croquis: persistedValues.constat_croquis || normalizeOuiNon(rawValue(constatRaw, "croquis", "croquis inclus", "schema", "dessin")),
+      pv_numero: persistedValues.pv_numero,
+      pv_responsabilite: persistedValues.pv_responsabilite,
+      pv_parties: persistedValues.pv_parties,
+      pv_expert_nom: persistedValues.pv_expert_nom,
+      pv_expertise_date: persistedValues.pv_expertise_date,
+      pv_cout_estime: persistedValues.pv_cout_estime,
+      pv_infractions: persistedValues.pv_infractions,
+      photos_commentaire: persistedValues.photos_commentaire || String(rawValue(photoRaw, "commentaire", "description", "accident_summary", "circonstances") || photoAi?.accident_summary || "").trim(),
+      garage_nom: persistedValues.garage_nom,
+      garage_cout_ht: persistedValues.garage_cout_ht,
+      garage_tva: persistedValues.garage_tva,
+      garage_cout_ttc: persistedValues.garage_cout_ttc,
+      garage_pieces: persistedValues.garage_pieces,
+    };
+
+    claimForm.reset(hydrated);
+  }, [activeClaim, claimForm, ocr]);
 
   const garageHt = claimForm.watch("garage_cout_ht");
   const garageTva = claimForm.watch("garage_tva");
@@ -636,6 +698,7 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
 
   function applyAi(ai: JsonRecord, scope: Tab, docKey: string) {
     const raw = (ai.raw_fields as JsonRecord) || ai;
+    lastAiAppliedAtRef.current = Date.now();
     setOcr({ ...ocr, [scope]: { ...((ocr[scope] as JsonRecord) || {}), [docKey]: ai } });
 
     if (docKey === "cin") {
@@ -650,9 +713,10 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
       clientForm.setValue("city", rawValue(raw, "ville", "city"));
     }
     if (docKey === "domicile") {
-      clientForm.setValue("domicile_address", rawValue(raw, "adresse", "address"));
-      clientForm.setValue("domicile_issuer", rawValue(raw, "emetteur", "issuer", "societe"));
-      clientForm.setValue("domicile_date", isoDate(rawValue(raw, "date", "date document")).slice(0, 7));
+      clientForm.setValue("domicile_address", rawValue(raw, "adresse", "address", "domicile_address"));
+      clientForm.setValue("domicile_type", rawValue(raw, "type_document", "type", "domicile_type") || "");
+      clientForm.setValue("domicile_issuer", rawValue(raw, "emetteur", "issuer", "societe", "domicile_issuer"));
+      clientForm.setValue("domicile_date", isoDate(rawValue(raw, "date", "date document", "domicile_date")).slice(0, 7));
     }
     if (docKey === "cg") {
       vehicleForm.setValue("registration_number", String(ai.vehicle || rawValue(raw, "immatriculation", "registration_number")));
@@ -664,42 +728,87 @@ export function PlatformProvider({ children }: { children: ReactNode }) {
     }
     if (docKey === "permis") {
       vehicleForm.setValue("permis_conducteur", rawValue(raw, "nom", "conducteur", "nom complet"));
-      vehicleForm.setValue("permis_numero", rawValue(raw, "numero permis", "permis"));
+      vehicleForm.setValue("permis_numero", rawValue(raw, "numero permis", "numero", "permis"));
       vehicleForm.setValue("permis_categories", rawValue(raw, "categories", "categorie"));
+      vehicleForm.setValue("permis_autorite", rawValue(raw, "autorite"));
+      vehicleForm.setValue("permis_delivrance", isoDate(rawValue(raw, "date delivrance", "delivrance")));
+      vehicleForm.setValue("permis_expiration", isoDate(rawValue(raw, "date expiration", "expiration")));
     }
     if (docKey === "ct") {
       vehicleForm.setValue("ct_date_visite", isoDate(rawValue(raw, "date visite", "date")));
       vehicleForm.setValue("ct_resultat", rawValue(raw, "resultat", "result"));
       vehicleForm.setValue("ct_expiration", isoDate(rawValue(raw, "date expiration", "expiration")));
+      vehicleForm.setValue("ct_kilometrage", rawValue(raw, "kilometrage"));
     }
     if (docKey === "att") {
       vehicleForm.setValue("att_assureur", rawValue(raw, "assureur", "compagnie"));
       vehicleForm.setValue("att_contrat", rawValue(raw, "contrat", "police", "numero contrat"));
       vehicleForm.setValue("att_debut", isoDate(rawValue(raw, "date debut", "debut")));
       vehicleForm.setValue("att_fin", isoDate(rawValue(raw, "date fin", "fin")));
+      vehicleForm.setValue("att_bonus_malus", rawValue(raw, "bonus_malus", "bonus malus"));
+      vehicleForm.setValue("att_sinistres", rawValue(raw, "sinistres"));
     }
     if (docKey === "facture") {
       vehicleForm.setValue("facture_proprietaire", rawValue(raw, "proprietaire", "acheteur"));
       vehicleForm.setValue("facture_prix", rawValue(raw, "prix", "montant"));
+      vehicleForm.setValue("facture_date_achat", isoDate(rawValue(raw, "date achat", "date_achat", "date")));
       vehicleForm.setValue("facture_vendeur", rawValue(raw, "vendeur", "concessionnaire"));
     }
-    if (docKey === "constat") {
+    const isConstatResult = String(ai.document_type || docKey || "").toLowerCase() === "constat"
+      || Object.keys(raw).some((key) => ["heure","conducteur_a","conducteur_b","assureur_a","assureur_b","croquis"].includes(key.toLowerCase()));
+
+    if (isConstatResult || docKey === "constat") {
       claimForm.setValue("accident_date", isoDate(rawValue(raw, "date accident", "date_accident", "date")));
       claimForm.setValue("location", rawValue(raw, "lieu", "location"));
-      claimForm.setValue("description", String(ai.accident_summary || rawValue(raw, "description", "accident_summary")));
-      claimForm.setValue("constat_heure", rawValue(raw, "heure", "time"));
+      claimForm.setValue(
+        "description",
+        String(ai.accident_summary || rawValue(raw, "description", "accident_summary", "circonstances") || "")
+      );
+
+      const heure = rawValue(raw, "heure", "heure accident", "heure_accident", "time");
+      if (heure) claimForm.setValue("constat_heure", heure);
+
+      const conducteurA = rawValue(raw, "conducteur_a", "conducteur a", "vehicule a", "vehicule_a", "conducteur vehicule a", "identite conducteur a");
+      if (conducteurA) claimForm.setValue("constat_conducteur_a", conducteurA);
+
+      const conducteurB = rawValue(raw, "conducteur_b", "conducteur b", "vehicule b", "vehicule_b", "conducteur vehicule b", "identite conducteur b");
+      if (conducteurB) claimForm.setValue("constat_conducteur_b", conducteurB);
+
+      const assureurA = rawValue(raw, "assureur_a", "assureur a", "compagnie a", "compagnie assurance a");
+      if (assureurA) claimForm.setValue("constat_assureur_a", assureurA);
+
+      const assureurB = rawValue(raw, "assureur_b", "assureur b", "compagnie b", "compagnie assurance b");
+      if (assureurB) claimForm.setValue("constat_assureur_b", assureurB);
+
+      const croquisRaw = rawValue(raw, "croquis", "croquis inclus", "schema", "dessin");
+      const croquisNormalized = normalizeOuiNon(croquisRaw);
+      if (croquisNormalized) claimForm.setValue("constat_croquis", croquisNormalized);
+
+      const responsabilite = rawValue(raw, "responsabilite_probable", "responsabilite");
+      const currentDescription = claimForm.getValues("description");
+      if (responsabilite && currentDescription && !currentDescription.toLowerCase().includes(responsabilite.toLowerCase())) {
+        claimForm.setValue("description", `${currentDescription}\n\nResponsabilité probable (IA): ${responsabilite}`);
+      }
     }
     if (docKey === "pv") {
-      claimForm.setValue("pv_numero", rawValue(raw, "numero pv", "reference"));
-      claimForm.setValue("pv_responsabilite", rawValue(raw, "responsabilite"));
-      claimForm.setValue("pv_infractions", rawValue(raw, "infractions"));
+      claimForm.setValue("pv_numero", rawValue(raw, "numero pv", "numero", "reference"));
+      claimForm.setValue("pv_responsabilite", rawValue(raw, "responsabilite_probable", "responsabilite"));
+      claimForm.setValue("pv_parties", rawValue(raw, "parties", "parties_impliquees"));
+      claimForm.setValue("pv_expert_nom", rawValue(raw, "expert_nom", "expert"));
+      claimForm.setValue("pv_expertise_date", isoDate(rawValue(raw, "date expertise", "date_expertise", "expertise_date")));
+      claimForm.setValue("pv_cout_estime", rawValue(raw, "cout_estime", "cout estime", "cout_estimation"));
+      claimForm.setValue("pv_infractions", rawValue(raw, "infractions", "infractions_relevees"));
     }
     if (docKey === "garage") {
       claimForm.setValue("garage_nom", String(ai.garage_name || rawValue(raw, "garage", "nom garage")));
-      if (ai.total_cost) claimForm.setValue("garage_cout_ttc", String(ai.total_cost));
+      claimForm.setValue("garage_cout_ht", rawValue(raw, "cout_ht", "cout ht"));
+      claimForm.setValue("garage_tva", rawValue(raw, "tva", "TVA") || "20");
+      claimForm.setValue("garage_cout_ttc", String(ai.total_cost || rawValue(raw, "cout_ttc", "cout ttc") || ""));
+      claimForm.setValue("garage_pieces", rawValue(raw, "pieces", "pieces_changees"));
     }
-    if (docKey === "photos" && !claimForm.getValues("description")) {
-      claimForm.setValue("description", String(ai.accident_summary || ""));
+    if (docKey === "photos") {
+      const photoComment = String(ai.accident_summary || rawValue(raw, "description", "accident_summary", "commentaire", "circonstances") || "").trim();
+      if (photoComment) claimForm.setValue("photos_commentaire", photoComment);
     }
   }
 

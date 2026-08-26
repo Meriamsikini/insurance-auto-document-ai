@@ -1,7 +1,22 @@
 "use client";
 
+/**
+ * src/app/profile/page.tsx  —  Replace existing file with this version.
+ *
+ * Task 1 (previous): full "Mon Profil" page — avatar, identity, personal
+ *   information form, password change, logout zone.
+ *
+ * Task 4 (new): the theme toggle now uses `next-themes`'s useTheme() hook
+ *   for an IMMEDIATE live preview when clicking "Clair" / "Sombre" — the
+ *   whole app switches appearance right away, before the form is even
+ *   submitted. Clicking "Enregistrer les modifications" then persists the
+ *   choice to the employee's profile on the backend (PATCH /auth/me), so
+ *   the preference follows them next time they log in (see ThemeSync).
+ */
+
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import {
   ArrowLeft,
   AtSign,
@@ -27,6 +42,10 @@ export default function ProfilePage() {
   const { employee, isAuthenticated, hydrate, updateProfile, changePassword, logout } =
     useAuthStore();
 
+  // Task 4 — next-themes hook: setTheme() switches the app live,
+  // resolvedTheme reflects what's actually applied right now.
+  const { setTheme: applyTheme, resolvedTheme } = useTheme();
+
   const [saving, setSaving] = useState(false);
   const [changingPwd, setChangingPwd] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -36,7 +55,7 @@ export default function ProfilePage() {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [department, setDepartment] = useState("");
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setThemeField] = useState<"dark" | "light">("dark");
 
   // Password change
   const [currentPwd, setCurrentPwd] = useState("");
@@ -59,9 +78,13 @@ export default function ProfilePage() {
       setFullName(employee.full_name);
       setPhone(employee.phone ?? "");
       setDepartment(employee.department ?? "");
-      setTheme(employee.theme ?? "dark");
+      // Task 4 — prefer the live resolved theme (what's actually on screen)
+      // over the stored employee.theme, falling back to "dark".
+      const initial = (resolvedTheme === "light" ? "light" : employee.theme) ?? "dark";
+      setThemeField(initial === "light" ? "light" : "dark");
       if (employee.avatar_url) setAvatarPreview(employee.avatar_url);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, employee, router]);
 
   // Handle local avatar preview (stored client-side as base64 for now)
@@ -80,6 +103,13 @@ export default function ProfilePage() {
     reader.readAsDataURL(file);
   }
 
+  // Task 4 — clicking a theme button switches the app immediately (preview)
+  // AND updates the local form state used when the form is saved.
+  function handleThemeClick(t: "dark" | "light") {
+    setThemeField(t);
+    applyTheme(t);
+  }
+
   async function handleSaveProfile(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -89,8 +119,10 @@ export default function ProfilePage() {
         phone: phone || null,
         department: department || null,
         theme,
-        // avatar_url: avatarPreview  ← enable when backend supports file upload
       });
+      // Ensure the live theme matches what was just saved (in case the
+      // user changed it via keyboard/programmatically without clicking).
+      applyTheme(theme);
       toast.success("Profil mis à jour avec succès.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erreur lors de la mise à jour.");
@@ -321,7 +353,7 @@ export default function ProfilePage() {
             </Field>
           </div>
 
-          {/* Thème clair / sombre */}
+          {/* Thème clair / sombre — Task 4: bascule immédiate + sauvegarde persistée */}
           <div>
             <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-ink3">
               Thème de l&apos;interface
@@ -331,7 +363,7 @@ export default function ProfilePage() {
                 <button
                   key={t}
                   type="button"
-                  onClick={() => setTheme(t)}
+                  onClick={() => handleThemeClick(t)}
                   className={`flex items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-semibold transition ${
                     theme === t
                       ? "border-brand-500/50 bg-brand-500/15 text-brand-300 shadow-card"
@@ -348,6 +380,7 @@ export default function ProfilePage() {
               {theme === "dark"
                 ? "Interface sombre — recommandée pour un usage prolongé."
                 : "Interface claire — adaptée aux environnements lumineux."}
+              {" "}L&apos;aperçu est immédiat ; cliquez sur « Enregistrer » pour le conserver.
             </p>
           </div>
 

@@ -17,7 +17,7 @@ from app.db.session import get_db
 from app.models import Client, Document, InsuranceContract, Sinistre, Vehicle
 from app.schemas import DocumentAssignRefs, DocumentRead
 from app.services.audit import write_audit_log
-from app.services.document_processor import process_document_async
+from app.services.document_processor import process_document_async, remove_document_ai_result
 from app.services.notifications import create_notification, push_event
 from app.services.storage import assert_file_exists, normalize_document_type, save_upload
 
@@ -213,6 +213,11 @@ def delete_document(document_id: int, db: Session = Depends(get_db)) -> None:
             logger.info(f"Physical file deleted: {document.file_path}")
     except OSError as exc:
         logger.warning(f"Could not delete file {document.file_path}: {exc}")
+
+    # Remove AI-derived values from the owning card before deleting the source.
+    # Both changes are committed together, so reopening the dossier cannot
+    # restore stale extraction data.
+    remove_document_ai_result(db, document)
 
     # Audit before deletion so entity_id is still valid
     write_audit_log(

@@ -27,6 +27,24 @@ GENERIC_SCHEMA: dict[str, Any] = {
 }
 
 
+def _flatten_string_list(value: Any) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, dict):
+        flattened: list[str] = []
+        for nested_value in value.values():
+            flattened.extend(_flatten_string_list(nested_value))
+        return flattened
+    if isinstance(value, (list, tuple, set)):
+        flattened = []
+        for item in value:
+            flattened.extend(_flatten_string_list(item))
+        return flattened
+    if isinstance(value, str):
+        return [value] if value.strip() else []
+    return [str(value)] if value != "" else []
+
+
 def normalize_ai_output(data: dict[str, Any]) -> dict[str, Any]:
     normalized = {
         "name": data.get("name") or data.get("full_name") or "",
@@ -34,15 +52,15 @@ def normalize_ai_output(data: dict[str, Any]) -> dict[str, Any]:
         "vehicle": data.get("vehicle") or data.get("registration_number") or "",
         "accident_summary": data.get("accident_summary") or data.get("description") or "",
         "damage_level": data.get("damage_level") or data.get("severity") or "",
-        "damaged_parts": data.get("damaged_parts") or data.get("damage_parts") or [],
+        "damaged_parts": _flatten_string_list(data.get("damaged_parts") or data.get("damage_parts") or []),
     }
     for optional_key in ("garage_name", "total_cost", "repair_items", "raw_fields"):
         if optional_key in data:
             normalized[optional_key] = data[optional_key]
-    if not isinstance(normalized["damaged_parts"], list):
-        normalized["damaged_parts"] = [str(normalized["damaged_parts"])]
     if "repair_items" in normalized and not isinstance(normalized["repair_items"], list):
-        normalized["repair_items"] = [str(normalized["repair_items"])]
+        normalized["repair_items"] = _flatten_string_list(normalized["repair_items"])
+    else:
+        normalized["repair_items"] = _flatten_string_list(normalized.get("repair_items") or [])
     return normalized
 
 

@@ -8,6 +8,7 @@ import { Badge, Button, EmptyState, Panel, PanelBody, PanelHead, SegmentedTabs }
 import { DocumentCard } from "@/components/document-card";
 import { DocUploadChip, type ChipTone } from "@/components/upload-dropzone";
 import { cardsFor, matchDocuments, type CardDef } from "@/lib/document-schema";
+import type { Client, Vehicle } from "@/lib/api";
 
 type Tab = "client" | "vehicle" | "claim";
 type JsonRecord = Record<string, unknown>;
@@ -302,6 +303,7 @@ export function WorkspaceView() {
                     key={card.key}
                     def={card}
                     register={clientForm.register}
+                    resetFields={(names) => names.forEach((n) => clientForm.setValue(n as any, "" as any))}
                     matchedDocuments={matchDocuments(documents, card, { clientId: activeClientId })}
                     ocrExtracted={!!(ocr.client as JsonRecord | undefined)?.[card.key]}
                     onDownload={handleDownloadDocument}
@@ -348,6 +350,7 @@ export function WorkspaceView() {
                     key={card.key}
                     def={card}
                     register={vehicleForm.register}
+                    resetFields={(names) => names.forEach((n) => vehicleForm.setValue(n as any, "" as any))}
                     matchedDocuments={matchDocuments(documents, card, { clientId: activeClientId, vehicleId: activeVehicleId })}
                     ocrExtracted={!!(ocr.vehicle as JsonRecord | undefined)?.[card.key]}
                     onDownload={handleDownloadDocument}
@@ -402,6 +405,7 @@ export function WorkspaceView() {
                     key={card.key}
                     def={card}
                     register={claimForm.register}
+                    resetFields={(names) => names.forEach((n) => claimForm.setValue(n as any, "" as any))}
                     matchedDocuments={matchDocuments(documents, card, { clientId: activeClientId, vehicleId: activeVehicleId, claimId: activeClaimId })}
                     ocrExtracted={!!(ocr.claim as JsonRecord | undefined)?.[card.key]}
                     onDownload={handleDownloadDocument}

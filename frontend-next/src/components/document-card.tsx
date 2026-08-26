@@ -20,11 +20,13 @@ function docStatusTone(status: string): "green" | "amber" | "red" | "blue" {
  *
  * Task 5: "Restaurer" button — clears card fields without deleting the file or re-running OCR.
  *
- * Task 2 (new): Delete button (XCircle) on FAILED documents only.
- *   - Visible only when processing_status === "FAILED".
+ * Task 2 (updated): Delete button (XCircle) is now shown on EVERY document row,
+ *   regardless of processing_status — not just FAILED anymore.
  *   - Calls onDeleteDocument(doc) → backend DELETE + store/OCR cleanup in parent.
  *   - Row fades out smoothly; no page reload needed.
- *   - Red hover colour, pointer cursor, subtle scale animation.
+ *   - Red hover colour, pointer cursor, subtle scale animation — same for all statuses.
+ *   - FAILED rows keep their distinct visual treatment (strikethrough filename,
+ *     download disabled) — this did not change, only the delete button visibility did.
  */
 export function DocumentCard({
   def,
@@ -43,7 +45,7 @@ export function DocumentCard({
   matchedDocuments: DocumentItem[];
   ocrExtracted: boolean;
   onDownload: (document: DocumentItem) => void;
-  /** Task 2: delete a FAILED document from the workflow entirely */
+  /** Task 2: delete ANY document (any status) from the workflow entirely */
   onDeleteDocument?: (document: DocumentItem) => Promise<void>;
 }) {
   const Icon = def.icon;
@@ -60,7 +62,7 @@ export function DocumentCard({
     toast.info(`Carte « ${def.title} » réinitialisée. Vous pouvez saisir de nouvelles données.`);
   }
 
-  // Task 2 — delete FAILED document
+  // Task 2 — delete document (works for ANY status now)
   async function handleDelete(e: React.MouseEvent, document: DocumentItem) {
     e.stopPropagation();
     e.preventDefault();
@@ -179,7 +181,7 @@ export function DocumentCard({
                         : "translate-y-0 opacity-100",
                     ].join(" ")}
                   >
-                    {/* Filename + download trigger (disabled for FAILED) */}
+                    {/* Filename + download trigger (disabled for FAILED only) */}
                     <button
                       type="button"
                       onClick={() => !isFailed && onDownload(document)}
@@ -212,8 +214,14 @@ export function DocumentCard({
                       {document.processing_status}
                     </Badge>
 
-                    {/* ── Task 2: X delete button — FAILED rows only ── */}
-                    {isFailed && onDeleteDocument && (
+                    {/*
+                      ── Task 2 (updated): X delete button now shown on EVERY row ──
+                      Previously restricted to `isFailed` only. The condition below
+                      is now simply `onDeleteDocument` (i.e. always shown when the
+                      parent supplies the callback), so COMPLETED / PROCESSING /
+                      PENDING documents can also be removed from the workflow.
+                    */}
+                    {onDeleteDocument && (
                       <button
                         type="button"
                         disabled={isDeleting}

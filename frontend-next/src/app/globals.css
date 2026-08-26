@@ -1,10 +1,75 @@
+/**
+ * frontend-next/src/app/globals.css  —  Replace existing file with this version.
+ *
+ * Task 4 — Mode clair.
+ * Ajout des variables de design (--c-*) consommées par tailwind.config.ts.
+ * :root définit le thème SOMBRE par défaut avec les valeurs EXACTES de
+ * l'ancienne palette (aucun changement visuel en dark mode).
+ * .light redéfinit ces mêmes variables avec une palette claire cohérente.
+ * La classe .light est ajoutée sur <html> par next-themes quand
+ * l'utilisateur choisit "Clair" (voir profile/page.tsx + theme-sync.tsx).
+ */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ─────────────────────────────────────────────────────────────
+   Design tokens (triplets RGB "R G B", consommés par
+   tailwind.config.ts via rgb(var(--c-xxx) / <alpha-value>) —
+   ce format permet aux opacités Tailwind (ex: bg-surface/80) de
+   continuer à fonctionner normalement dans les deux thèmes.
+   ───────────────────────────────────────────────────────────── */
 :root {
-  --background: #0f1117;
-  --foreground: #e8eaf0;
+  /* Thème SOMBRE (par défaut — valeurs identiques à l'origine) */
+  --c-canvas: 15 17 23;         /* #0F1117 */
+  --c-surface: 23 27 38;        /* #171B26 */
+  --c-surface2: 30 35 51;       /* #1E2333 */
+  --c-surface3: 37 43 59;       /* #252B3B */
+  --c-line: 45 52 80;           /* #2D3450 */
+  --c-ink: 232 234 240;         /* #E8EAF0 */
+  --c-ink2: 139 144 168;        /* #8B90A8 */
+  --c-ink3: 90 95 120;          /* #5A5F78 */
+
+  --c-brand-50: 238 241 255;    /* #EEF1FF */
+  --c-brand-100: 225 230 254;   /* #E1E6FE */
+  --c-brand-200: 195 205 253;   /* #C3CDFD */
+  --c-brand-300: 157 170 251;   /* #9DAAFB */
+  --c-brand-400: 113 134 248;   /* #7186F8 */
+  --c-brand-500: 79 110 247;    /* #4F6EF7 */
+  --c-brand-600: 61 91 224;     /* #3D5BE0 */
+  --c-brand-700: 51 71 194;     /* #3347C2 */
+  --c-brand-800: 43 59 156;     /* #2B3B9C */
+  --c-brand-900: 38 51 125;     /* #26337D */
+
+  --background: rgb(var(--c-canvas));
+  --foreground: rgb(var(--c-ink));
+
+  color-scheme: dark;
+}
+
+/* Thème CLAIR — activé par la classe "light" que next-themes ajoute
+   sur <html> quand le bouton "Clair" est sélectionné dans le profil. */
+.light {
+  --c-canvas: 244 246 251;      /* #F4F6FB */
+  --c-surface: 255 255 255;     /* #FFFFFF */
+  --c-surface2: 241 244 250;    /* #F1F4FA */
+  --c-surface3: 230 234 243;    /* #E6EAF3 */
+  --c-line: 220 225 238;        /* #DCE1EE */
+  --c-ink: 17 24 39;            /* #111827 */
+  --c-ink2: 75 85 103;          /* #4B5567 */
+  --c-ink3: 137 146 166;        /* #8992A6 */
+
+  /* brand-300/400 assombris pour garantir un contraste correct sur fond
+     blanc (utilisés comme couleur de texte/icônes actifs) — brand-500 à
+     900 restent identiques car utilisés comme fonds de boutons pleins
+     avec texte blanc, ce qui fonctionne déjà bien sur les deux thèmes. */
+  --c-brand-300: 85 104 224;    /* #5568E0 */
+  --c-brand-400: 74 94 219;     /* #4A5EDB */
+
+  --background: rgb(var(--c-canvas));
+  --foreground: rgb(var(--c-ink));
+
+  color-scheme: light;
 }
 
 * {
@@ -23,6 +88,15 @@ body {
     radial-gradient(circle at 100% 0%, rgba(56, 189, 248, 0.06), transparent 28rem),
     var(--background);
   color: var(--foreground);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Gradient légèrement adouci en mode clair pour ne pas ternir le fond blanc */
+.light body {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(79, 110, 247, 0.06), transparent 32rem),
+    radial-gradient(circle at 100% 0%, rgba(56, 189, 248, 0.05), transparent 28rem),
+    var(--background);
 }
 
 button,
@@ -30,7 +104,6 @@ input,
 select,
 textarea {
   font: inherit;
-  color-scheme: dark;
 }
 
 button {
@@ -49,7 +122,7 @@ pre {
 
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: #2d3450 transparent;
+  scrollbar-color: rgb(var(--c-line)) transparent;
 }
 
 .scrollbar-thin::-webkit-scrollbar {
@@ -58,7 +131,7 @@ pre {
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background-color: #2d3450;
+  background-color: rgb(var(--c-line));
   border-radius: 999px;
 }
 

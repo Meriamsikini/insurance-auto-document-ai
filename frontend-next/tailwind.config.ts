@@ -1,6 +1,26 @@
+/**
+ * frontend-next/tailwind.config.ts  —  Replace existing file with this version.
+ *
+ * Task 4 — Mode clair.
+ * Les couleurs custom (canvas, surface, surface2, surface3, line, ink, ink2,
+ * ink3, brand-50..900) sont converties en références vers des variables CSS
+ * (rgb(var(--c-xxx) / <alpha-value>)) au lieu de valeurs hexadécimales fixes.
+ *
+ * Pourquoi : c'est la SEULE façon de permettre à `next-themes` de basculer
+ * réellement l'apparence de l'application à l'exécution (via une classe
+ * `.light` sur <html>) SANS modifier un seul composant existant — tous les
+ * composants utilisent déjà des classes Tailwind sémantiques comme
+ * `bg-surface`, `text-ink`, `border-line`, `text-brand-300`, etc. Il suffit
+ * que ces noms de classe résolvent vers des couleurs différentes selon le
+ * thème actif, ce que gère globals.css (voir Task 4 dans ce fichier).
+ *
+ * Les valeurs par défaut (:root, thème sombre) sont IDENTIQUES aux
+ * hexadécimaux d'origine — aucune régression visuelle en mode sombre.
+ */
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
@@ -8,25 +28,25 @@ const config: Config = {
         sans: ["var(--font-inter)", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       colors: {
-        canvas: "#0F1117",
-        surface: "#171B26",
-        surface2: "#1E2333",
-        surface3: "#252B3B",
-        line: "#2D3450",
-        ink: "#E8EAF0",
-        ink2: "#8B90A8",
-        ink3: "#5A5F78",
+        canvas:   "rgb(var(--c-canvas)   / <alpha-value>)",
+        surface:  "rgb(var(--c-surface)  / <alpha-value>)",
+        surface2: "rgb(var(--c-surface2) / <alpha-value>)",
+        surface3: "rgb(var(--c-surface3) / <alpha-value>)",
+        line:     "rgb(var(--c-line)     / <alpha-value>)",
+        ink:      "rgb(var(--c-ink)      / <alpha-value>)",
+        ink2:     "rgb(var(--c-ink2)     / <alpha-value>)",
+        ink3:     "rgb(var(--c-ink3)     / <alpha-value>)",
         brand: {
-          50: "#EEF1FF",
-          100: "#E1E6FE",
-          200: "#C3CDFD",
-          300: "#9DAAFB",
-          400: "#7186F8",
-          500: "#4F6EF7",
-          600: "#3D5BE0",
-          700: "#3347C2",
-          800: "#2B3B9C",
-          900: "#26337D",
+          50:  "rgb(var(--c-brand-50)  / <alpha-value>)",
+          100: "rgb(var(--c-brand-100) / <alpha-value>)",
+          200: "rgb(var(--c-brand-200) / <alpha-value>)",
+          300: "rgb(var(--c-brand-300) / <alpha-value>)",
+          400: "rgb(var(--c-brand-400) / <alpha-value>)",
+          500: "rgb(var(--c-brand-500) / <alpha-value>)",
+          600: "rgb(var(--c-brand-600) / <alpha-value>)",
+          700: "rgb(var(--c-brand-700) / <alpha-value>)",
+          800: "rgb(var(--c-brand-800) / <alpha-value>)",
+          900: "rgb(var(--c-brand-900) / <alpha-value>)",
         },
       },
       boxShadow: {
