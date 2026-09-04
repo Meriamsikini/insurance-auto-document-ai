@@ -38,7 +38,7 @@ export const Button = forwardRef<
   <button
     ref={ref}
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-lg font-semibold transition disabled:cursor-not-allowed disabled:opacity-45",
+      "inline-flex items-center justify-center whitespace-nowrap rounded-lg font-semibold transition-all duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-45",
       buttonVariants[variant],
       buttonSizes[size],
       className,
@@ -55,7 +55,11 @@ export function IconButton({ className, ...props }: ButtonHTMLAttributes<HTMLBut
 /* ----------------------------------- Card ----------------------------------- */
 
 export const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("rounded-lg border border-line bg-surface shadow-soft", className)} {...props} />
+  <div
+    ref={ref}
+    className={cn("rounded-lg border border-line bg-surface shadow-soft transition-all duration-200", className)}
+    {...props}
+  />
 ));
 Card.displayName = "Card";
 
@@ -105,7 +109,11 @@ Textarea.displayName = "Textarea";
 
 /* ----------------------------------- Badge ---------------------------------- */
 
-export function Badge({ children, tone = "slate" }: PropsWithChildren<{ tone?: "slate" | "blue" | "green" | "amber" | "red" }>) {
+export function Badge({
+  children,
+  tone = "slate",
+  pulse = false,
+}: PropsWithChildren<{ tone?: "slate" | "blue" | "green" | "amber" | "red"; pulse?: boolean }>) {
   const tones: Record<string, string> = {
     slate: "bg-surface3 text-ink2 border border-line",
     blue: "bg-brand-500/12 text-brand-300 border border-brand-500/25",
@@ -113,15 +121,30 @@ export function Badge({ children, tone = "slate" }: PropsWithChildren<{ tone?: "
     amber: "bg-amber-500/12 text-amber-400 border border-amber-500/25",
     red: "bg-rose-500/12 text-rose-400 border border-rose-500/25",
   };
-  return <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-extrabold", tones[tone])}>{children}</span>;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-extrabold transition-transform duration-150",
+        tones[tone],
+        pulse && "animate-pulse",
+      )}
+    >
+      {children}
+    </span>
+  );
 }
 
 /* --------------------------------- StatCard --------------------------------- */
+// Mirrors the Supply Chain dashboard's KPICard: a tinted gradient icon tile,
+// a big number, an optional trend arrow, and a soft hover lift + glow. Works
+// unmodified in both the dark (default) and ".light" themes since every
+// color here resolves through the shared --c-* design tokens.
 
 const statTones: Record<string, string> = {
   brand: "from-brand-500 to-brand-600",
   teal: "from-sky-400 to-sky-500",
   amber: "from-amber-500 to-amber-600",
+  rose: "from-rose-500 to-rose-600",
   slate: "from-surface3 to-surface3",
 };
 
@@ -129,7 +152,13 @@ const statNumberTones: Record<string, string> = {
   brand: "text-brand-300",
   teal: "text-sky-300",
   amber: "text-amber-300",
+  rose: "text-rose-300",
   slate: "text-ink",
+};
+
+const trendTones: Record<"up" | "down", string> = {
+  up: "text-emerald-400",
+  down: "text-rose-400",
 };
 
 export function StatCard({
@@ -137,20 +166,46 @@ export function StatCard({
   value,
   icon: Icon,
   tone = "brand",
+  trend,
+  emoji,
+  hint,
 }: {
   label: string;
   value: number | string;
   icon: ComponentType<{ size?: number; className?: string }>;
-  tone?: "brand" | "teal" | "amber" | "slate";
+  tone?: "brand" | "teal" | "amber" | "rose" | "slate";
+  /** Optional % change vs. a previous period. Positive renders green/up, negative red/down. */
+  trend?: number;
+  /** Optional emoji shown next to the label, e.g. "🚗", "⚠️", "✅". Renders fine in both themes. */
+  emoji?: string;
+  /** Optional small muted line under the label. */
+  hint?: string;
 }) {
+  const trendDirection = trend === undefined ? null : trend >= 0 ? "up" : "down";
   return (
-    <Card className="flex items-center gap-2.5 p-2.5">
-      <span className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-md bg-gradient-to-br text-white", statTones[tone])}>
+    <Card className="group flex items-center gap-2.5 p-2.5 hover:-translate-y-0.5 hover:border-brand-400/40 hover:shadow-glow">
+      <span
+        className={cn(
+          "grid h-9 w-9 shrink-0 place-items-center rounded-md bg-gradient-to-br text-white shadow-card transition-transform duration-200 group-hover:scale-110",
+          statTones[tone],
+        )}
+      >
         <Icon size={19} />
       </span>
       <div className="min-w-0">
-        <div className={cn("text-lg font-extrabold", statNumberTones[tone])}>{value}</div>
-        <div className="truncate text-xs font-semibold uppercase tracking-wide text-ink3">{label}</div>
+        <div className="flex items-baseline gap-1.5">
+          <div className={cn("text-lg font-extrabold leading-none", statNumberTones[tone])}>{value}</div>
+          {trendDirection && (
+            <span className={cn("text-[11px] font-bold", trendTones[trendDirection])}>
+              {trendDirection === "up" ? "▲" : "▼"} {Math.abs(trend as number).toFixed(1)}%
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1 truncate text-xs font-semibold uppercase tracking-wide text-ink3">
+          {emoji && <span className="text-sm not-italic">{emoji}</span>}
+          {label}
+        </div>
+        {hint && <div className="truncate text-[10px] text-ink3">{hint}</div>}
       </div>
     </Card>
   );
@@ -178,7 +233,7 @@ export function SegmentedTabs<T extends string>({
             type="button"
             onClick={() => onChange(item.key)}
             className={cn(
-              "flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-bold transition",
+              "flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-bold transition-all duration-150",
               active ? "bg-surface text-brand-300 shadow-card" : "text-ink2 hover:text-ink",
             )}
           >
@@ -203,7 +258,7 @@ export function EmptyState({
   description?: string;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-line bg-surface2/40 p-5 text-center">
+    <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-line bg-surface2/40 p-5 text-center animate-fade-in">
       <span className="grid h-8 w-8 place-items-center rounded-full bg-surface3 text-ink3">
         <Icon size={18} />
       </span>
@@ -220,7 +275,7 @@ export function ProgressBar({ percent, tone = "brand" }: { percent: number; tone
   const bar = clamped === 100 ? "bg-emerald-500" : tone === "amber" ? "bg-amber-500" : tone === "teal" ? "bg-sky-400" : "bg-brand-500";
   return (
     <div className="h-2 w-full overflow-hidden rounded-full bg-surface2">
-      <div className={cn("h-full rounded-full transition-all", bar)} style={{ width: `${clamped}%` }} />
+      <div className={cn("h-full rounded-full transition-all duration-500 ease-out", bar)} style={{ width: `${clamped}%` }} />
     </div>
   );
 }

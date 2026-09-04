@@ -1,26 +1,19 @@
 /**
- * frontend-next/src/app/globals.css  —  Replace existing file with this version.
+ * frontend-next/src/app/globals.css
  *
- * Task 4 — Mode clair.
- * Ajout des variables de design (--c-*) consommées par tailwind.config.ts.
- * :root définit le thème SOMBRE par défaut avec les valeurs EXACTES de
- * l'ancienne palette (aucun changement visuel en dark mode).
- * .light redéfinit ces mêmes variables avec une palette claire cohérente.
- * La classe .light est ajoutée sur <html> par next-themes quand
- * l'utilisateur choisit "Clair" (voir profile/page.tsx + theme-sync.tsx).
+ * Design tokens (triplets RGB "R G B", consumed by tailwind.config.ts via
+ * rgb(var(--c-xxx) / <alpha-value>)) so Tailwind opacity modifiers keep
+ * working normally in both themes. :root is the dark theme (default,
+ * unchanged from the original palette); .light overrides the same
+ * variables with a light, coherent palette. next-themes toggles the
+ * "light" class on <html> (see theme-provider.tsx / profile page).
  */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ─────────────────────────────────────────────────────────────
-   Design tokens (triplets RGB "R G B", consommés par
-   tailwind.config.ts via rgb(var(--c-xxx) / <alpha-value>) —
-   ce format permet aux opacités Tailwind (ex: bg-surface/80) de
-   continuer à fonctionner normalement dans les deux thèmes.
-   ───────────────────────────────────────────────────────────── */
 :root {
-  /* Thème SOMBRE (par défaut — valeurs identiques à l'origine) */
+  /* Dark theme (default) */
   --c-canvas: 15 17 23;         /* #0F1117 */
   --c-surface: 23 27 38;        /* #171B26 */
   --c-surface2: 30 35 51;       /* #1E2333 */
@@ -47,8 +40,8 @@
   color-scheme: dark;
 }
 
-/* Thème CLAIR — activé par la classe "light" que next-themes ajoute
-   sur <html> quand le bouton "Clair" est sélectionné dans le profil. */
+/* Light theme — activated by the "light" class next-themes adds to <html>
+   when "Clair" is selected in the profile page. */
 .light {
   --c-canvas: 244 246 251;      /* #F4F6FB */
   --c-surface: 255 255 255;     /* #FFFFFF */
@@ -59,10 +52,6 @@
   --c-ink2: 75 85 103;          /* #4B5567 */
   --c-ink3: 137 146 166;        /* #8992A6 */
 
-  /* brand-300/400 assombris pour garantir un contraste correct sur fond
-     blanc (utilisés comme couleur de texte/icônes actifs) — brand-500 à
-     900 restent identiques car utilisés comme fonds de boutons pleins
-     avec texte blanc, ce qui fonctionne déjà bien sur les deux thèmes. */
   --c-brand-300: 85 104 224;    /* #5568E0 */
   --c-brand-400: 74 94 219;     /* #4A5EDB */
 
@@ -91,7 +80,6 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Gradient légèrement adouci en mode clair pour ne pas ternir le fond blanc */
 .light body {
   background:
     radial-gradient(circle at 0% 0%, rgba(79, 110, 247, 0.06), transparent 32rem),
@@ -149,4 +137,17 @@ pre {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Reusable hover animation for card-style elements (stat cards, list rows,
+   document cards, ...). Works unchanged in dark and .light themes since the
+   glow color is a fixed brand-blue rgba overlay rather than a token. */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -10px rgba(79, 110, 247, 0.35);
+  border-color: rgba(79, 110, 247, 0.4);
 }

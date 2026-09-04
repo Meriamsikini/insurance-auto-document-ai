@@ -32,6 +32,13 @@ class Settings(BaseSettings):
 
     cors_origins: str = Field(default="*", alias="CORS_ORIGINS")
 
+    # --- Branding ---
+    # Optional explicit override for the PDF report logo. When unset, the PDF
+    # generator falls back to frontend-next/public/logo.jpeg automatically
+    # (the same file the web app serves), so this only needs to be set if the
+    # logo lives somewhere else in a given deployment.
+    logo_path: Path | None = Field(default=None, alias="LOGO_PATH")
+
     # --- Security ---
     # Generate with: openssl rand -hex 32
     secret_key: str = Field(..., alias="SECRET_KEY")

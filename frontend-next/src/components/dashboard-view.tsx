@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowDownAZ, CalendarClock, Car, CheckCircle2, ClipboardCheck, Files, FileWarning, Search, User } from "lucide-react";
+import { ArrowDownAZ, CalendarClock, CarFront, FileStack, FolderCheck, FolderX, Search, ShieldAlert, UsersRound } from "lucide-react";
 import type { Claim, Client, DocumentItem, Vehicle } from "@/lib/api";
 import { computeDossier } from "@/lib/document-schema";
 import { Badge, Button, Card, EmptyState, Input, ProgressBar, Select, StatCard } from "@/components/ui";
@@ -55,6 +55,7 @@ export function DashboardView({
 
   const completeCount = dossiers.filter((dossier) => dossier.percent === 100).length;
   const incompleteCount = dossiers.length - completeCount;
+  const completionRate = dossiers.length ? Math.round((completeCount / dossiers.length) * 100) : 0;
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -77,15 +78,21 @@ export function DashboardView({
   return (
     <div className="mx-auto max-w-[1600px] space-y-5 p-4 ">
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-        <StatCard label="Clients" value={clients.length} icon={User} tone="brand" />
-        <StatCard label="Vehicules" value={vehicles.length} icon={Car} tone="teal" />
-        <StatCard label="Sinistres" value={claims.length} icon={ClipboardCheck} tone="amber" />
-        <StatCard label="Documents" value={documents.length} icon={Files} tone="slate" />
-        <StatCard label="Dossiers complets" value={completeCount} icon={CheckCircle2} tone="teal" />
-        <StatCard label="Dossiers incomplets" value={incompleteCount} icon={FileWarning} tone="amber" />
+        <StatCard label="Clients" value={clients.length} icon={UsersRound} tone="brand" />
+        <StatCard label="Vehicules" value={vehicles.length} icon={CarFront} tone="teal" />
+        <StatCard label="Sinistres" value={claims.length} icon={ShieldAlert} tone="amber" />
+        <StatCard label="Documents" value={documents.length} icon={FileStack} tone="slate" />
+        <StatCard
+          label="Dossiers complets"
+          value={completeCount}
+          icon={FolderCheck}
+          tone="teal"
+          hint={`${completionRate}% du portefeuille`}
+        />
+        <StatCard label="Dossiers incomplets" value={incompleteCount} icon={FolderX} tone="rose" />
       </section>
 
-      <Card>
+      <Card className="animate-fade-in">
         <div className="flex flex-col gap-3 border-b border-line p-4 lg:flex-row lg:items-center">
           <div className="font-extrabold text-ink">Clients actifs</div>
           <div className="flex flex-1 flex-col gap-2 sm:flex-row lg:justify-end">
@@ -108,7 +115,7 @@ export function DashboardView({
 
         {filtered.length === 0 ? (
           <div className="p-4">
-            <EmptyState icon={User} title="Aucun client ne correspond" description="Ajustez la recherche ou les filtres." />
+            <EmptyState icon={UsersRound} title="Aucun client ne correspond" description="Ajustez la recherche ou les filtres." />
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -135,10 +142,10 @@ export function DashboardView({
                 {filtered.map((dossier) => {
                   const latestClaim = [...dossier.claims].sort((a, b) => b.id - a.id)[0];
                   return (
-                    <tr key={dossier.client.id} className="border-b border-line/70 last:border-0 hover:bg-surface2/40">
+                    <tr key={dossier.client.id} className="border-b border-line/70 last:border-0 transition-colors hover:bg-surface2/40">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2.5">
-                          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-xs font-extrabold text-white">
+                          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-xs font-extrabold text-white shadow-card">
                             {initials(dossier.client.full_name)}
                           </span>
                           <div className="min-w-0">
@@ -156,7 +163,9 @@ export function DashboardView({
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <div className="w-24"><ProgressBar percent={dossier.percent} /></div>
-                          <Badge tone={dossier.percent === 100 ? "green" : "amber"}>{dossier.percent}%</Badge>
+                          <Badge tone={dossier.percent === 100 ? "green" : "amber"}>
+                            {dossier.percent === 100 ? "✅" : "⏳"} {dossier.percent}%
+                          </Badge>
                         </div>
                       </td>
                       <td className="px-4 py-3">
