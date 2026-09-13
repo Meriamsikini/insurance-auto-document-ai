@@ -10,7 +10,7 @@ from app.models import (
     Notification,
     AuditLog,
 )
-from app import models_claims_agent  # noqa: F401 — enregistre ClaimAnalysisReport (AI Claims Agent)
+from app import models_claims_agent  
 
 def init():
     print("Initialisation de la base de données...")
