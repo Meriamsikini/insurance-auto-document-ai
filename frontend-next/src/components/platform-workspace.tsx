@@ -24,6 +24,7 @@ import { Badge, Button, EmptyState, Panel, PanelBody, PanelHead, SegmentedTabs }
 import { ALL_CARDS, cardsFor, matchDocuments, type CardDef } from "@/lib/document-schema";
 import { usePlatformStore } from "@/store/platform-store";
 import { AuthGuard } from "@/components/auth-guard";
+import { ClaimAnalysisPanel } from "@/components/claims-agent/ClaimAnalysisPanel";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -860,6 +861,10 @@ export default function PlatformWorkspace({ initialView, initialTab = "client" }
                             matchedDocuments={matchDocuments(documents, card, { clientId: activeClientId, vehicleId: activeVehicleId, claimId: activeClaimId })} ocrExtracted={!!(ocr.claim as JsonRecord | undefined)?.[card.key]} onDownload={handleDownloadDocument} onDeleteDocument={handleDeleteDocument} />
                         ))}
                       </div>
+
+                      {/* AI Claims Agent — analyse LangGraph du dossier de sinistre actif */}
+                      {activeClaim && <ClaimAnalysisPanel claimId={activeClaim.id} />}
+
                       <FormActions deleteLabel="Supprimer sinistre" dangerDisabled={!activeClaim} onDelete={() => removeActive("claim")}>
                         <Button type="button" disabled={!activeClaim} onClick={() => activeClaim && exportClaimReport(activeClaim)}><FileStack size={16} />Exporter rapport PDF</Button>
                         <Button variant="primary" disabled={!activeClient || !activeVehicle} type="submit"><Save size={16} />Enregistrer et clôturer le dossier</Button>

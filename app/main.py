@@ -10,7 +10,7 @@ from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, UploadFile, H
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from sqlalchemy.orm import Session
-from app.api.routes import auth, claims, clients, contracts, documents, notifications, search, vehicles, websockets
+from app.api.routes import auth, claims, claims_agent, clients, contracts, documents, notifications, search, vehicles, websockets
 from app.config import settings
 from app.db.session import get_db
 
@@ -29,6 +29,7 @@ app.include_router(clients.router, prefix=settings.api_prefix)
 app.include_router(vehicles.router, prefix=settings.api_prefix)
 app.include_router(contracts.router, prefix=settings.api_prefix)
 app.include_router(claims.router, prefix=settings.api_prefix)
+app.include_router(claims_agent.router, prefix=settings.api_prefix)  # AI Claims Agent (LangGraph)
 app.include_router(documents.router, prefix=settings.api_prefix)
 app.include_router(notifications.router, prefix=settings.api_prefix)
 app.include_router(search.router, prefix=settings.api_prefix)
