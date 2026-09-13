@@ -507,7 +507,7 @@ class ReportDocTemplate(BaseDocTemplate):
 
         canvas.setFillColor(colors.HexColor(PALETTE["brand_dark"]))
         canvas.setFont("Helvetica-Bold", 12)
-        canvas.drawString(text_x, top_y - 0.35 * cm, "AssurAuto Pro")
+        canvas.drawString(text_x, top_y - 0.35 * cm, "SL")
 
         canvas.setFillColor(colors.HexColor(PALETTE["ink_muted"]))
         canvas.setFont("Helvetica", 7.5)
@@ -536,7 +536,7 @@ class ReportDocTemplate(BaseDocTemplate):
 
         canvas.setFillColor(colors.HexColor(PALETTE["ink_muted"]))
         canvas.setFont("Helvetica", 7.5)
-        canvas.drawString(doc.leftMargin, rule_y - 0.3 * cm, "AssurAuto Pro \u2014 Document confidentiel, a usage interne")
+        canvas.drawString(doc.leftMargin, rule_y - 0.3 * cm, "SL \u2014 Document confidentiel, a usage interne")
         canvas.drawRightString(page_width - doc.rightMargin, rule_y - 0.3 * cm, f"Page {doc.page}")
         canvas.restoreState()
 
@@ -655,7 +655,7 @@ async def generate_claim_report(claim: Sinistre, db: Session) -> bytes:
     story.extend(create_section_header("06", "Synthese & Validation"))
     story.append(
         Paragraph(
-            f"Ce rapport a ete genere automatiquement par la plateforme AssurAuto Pro le "
+            f"Ce rapport a ete genere automatiquement par la plateforme SL le "
             f"{format_date(datetime.now())}. Il compile les informations saisies par les "
             f"equipes ainsi que les donnees extraites par le moteur d'intelligence "
             f"artificielle a partir des documents transmis. Une verification manuelle des "
@@ -667,7 +667,7 @@ async def generate_claim_report(claim: Sinistre, db: Session) -> bytes:
     story.append(Spacer(1, 0.3 * cm))
     story.append(
         Paragraph(
-            "Document genere electroniquement \u2014 ne necessite pas de signature manuscrite.",
+            "Document genere electroniquement .",
             styles["SectionSubtitle"],
         )
     )
